@@ -44,6 +44,7 @@ fn setup(mut commands: Commands) {
 
             parent.spawn((
                 TextEditable,
+                TextEditFocus,
                 Interaction::None,
                 TextBundle::from_section(
                     "Input Text 2",
