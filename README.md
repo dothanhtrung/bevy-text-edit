@@ -1,5 +1,5 @@
-bevy-edit-text
-================
+bevy_text_edit
+==============
 
 [![crates.io](https://img.shields.io/crates/v/bevy_edit_text)](https://crates.io/crates/bevy_edit_text)
 [![docs.rs](https://docs.rs/bevy_edit_text/badge.svg)](https://docs.rs/bevy_edit_text)
