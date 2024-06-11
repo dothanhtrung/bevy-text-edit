@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{EditTextPluginNoState, TextEditFocus, TextEditable};
+use bevy_text_edit::{TextEditPluginNoState, TextEditFocus, TextEditable};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(EditTextPluginNoState)
+        .add_plugins(TextEditPluginNoState)
         .add_systems(Startup, setup)
         .run();
 }

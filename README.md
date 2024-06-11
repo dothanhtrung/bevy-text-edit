@@ -25,7 +25,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(EditTextPlugin::default().in_state(vec![GameState::Menu]))
+        .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
         .run;
 }
 ```

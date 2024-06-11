@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{EditTextPlugin, TextEditFocus, TextEditable};
+use bevy_text_edit::{TextEditPlugin, TextEditFocus, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -13,7 +13,7 @@ fn main() {
         .init_state::<GameState>()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(EditTextPlugin::default().in_state(vec![GameState::Menu]))
+        .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
         .add_systems(Startup, setup)
         .run();
 }

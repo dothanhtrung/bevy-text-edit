@@ -15,7 +15,7 @@
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
 //!         // Add the plugin
-//!         .add_plugins(EditTextPlugin::default().in_state(vec![GameState::Menu]))
+//!         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
 //!         .run;
 //! }
 //! ```
@@ -67,10 +67,10 @@
 //! ```
 
 use bevy::app::{App, Plugin, Update};
-use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
+use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::{
-    in_state, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs, Query, Resource,
+    Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, in_state, IntoSystemConfigs, Query, Resource,
     States, Text, With,
 };
 use bevy::ui::Interaction;
@@ -81,14 +81,14 @@ const DEFAULT_CURSOR: &str = "|";
 pub struct TextCursor(String);
 
 #[derive(Default)]
-pub struct EditTextPlugin<T>
+pub struct TextEditPlugin<T>
 where
     T: States,
 {
     pub states: Option<Vec<T>>,
 }
 
-impl<T> Plugin for EditTextPlugin<T>
+impl<T> Plugin for TextEditPlugin<T>
 where
     T: States,
 {
@@ -108,19 +108,19 @@ where
     }
 }
 
-impl<T> EditTextPlugin<T>
+impl<T> TextEditPlugin<T>
 where
     T: States,
 {
-    pub fn in_state(&mut self, states: Vec<T>) {
-        self.states = Some(states);
+    pub fn new(states: Vec<T>) -> Self {
+        Self { states: Some(states) }
     }
 }
 
 #[derive(Default)]
-pub struct EditTextPluginNoState;
+pub struct TextEditPluginNoState;
 
-impl Plugin for EditTextPluginNoState {
+impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
         app.insert_resource(TextCursor(DEFAULT_CURSOR.to_string()));
         app.add_systems(Update, (change_focus, listen_keyboard_input));
