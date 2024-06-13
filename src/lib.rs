@@ -70,15 +70,47 @@ use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::{
-    Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, in_state, IntoSystemConfigs, Query, Resource,
-    States, Text, With,
+    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter, in_state,
+    IntoSystemConfigs, MouseButton, Query, Res, Resource, States, Text, With, Without,
 };
 use bevy::ui::Interaction;
 
+macro_rules! add_systems {
+    ($app: expr, $states: expr) => {
+        $app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+            .add_event::<TextFocusEvent>();
+        if let Some(states) = $states {
+            for state in states {
+                $app.add_systems(
+                    Update,
+                    (
+                        listen_interaction,
+                        listen_keyboard_input,
+                        focus_text_box.after(listen_interaction),
+                    )
+                        .run_if(in_state(state.clone())),
+                );
+            }
+        } else {
+            $app.add_systems(
+                Update,
+                (
+                    listen_interaction,
+                    listen_keyboard_input,
+                    focus_text_box.after(listen_interaction),
+                ),
+            );
+        }
+    };
+}
+
 const DEFAULT_CURSOR: &str = "|";
 
+#[derive(Component, Default, Deref, DerefMut)]
+pub struct CursorPosition(usize);
+
 #[derive(Resource, Deref, DerefMut)]
-pub struct TextCursor(String);
+pub struct DisplayTextCursor(String);
 
 #[derive(Default)]
 pub struct TextEditPlugin<T>
@@ -93,18 +125,7 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.insert_resource(TextCursor(DEFAULT_CURSOR.to_string()));
-
-        if let Some(states) = &self.states {
-            for state in states {
-                app.add_systems(
-                    Update,
-                    (change_focus, listen_keyboard_input).run_if(in_state(state.clone())),
-                );
-            }
-        } else {
-            app.add_systems(Update, (change_focus, listen_keyboard_input));
-        }
+        add_systems!(app, &self.states);
     }
 }
 
@@ -122,9 +143,15 @@ pub struct TextEditPluginNoState;
 
 impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
-        app.insert_resource(TextCursor(DEFAULT_CURSOR.to_string()));
-        app.add_systems(Update, (change_focus, listen_keyboard_input));
+        let non: Option<Vec<FakeGameState>> = None;
+        add_systems!(app, non);
     }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
+enum FakeGameState {
+    #[default]
+    NA,
 }
 
 #[derive(Component)]
@@ -133,42 +160,125 @@ pub struct TextEditFocus;
 #[derive(Component)]
 pub struct TextEditable;
 
-fn change_focus(
-    mut commands: Commands,
-    interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
-    text_focus: Query<Entity, With<TextEditFocus>>,
+#[derive(Event, Deref, DerefMut)]
+pub struct TextFocusEvent(Entity);
+
+fn unfocus_text_box(
+    commands: &mut Commands,
+    text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
 ) {
-    for (interaction, e) in interactions.iter() {
-        if *interaction == Interaction::Pressed {
-            for old_e in text_focus.iter() {
-                commands.entity(old_e).remove::<TextEditFocus>();
+    for (e, pos, mut text) in text_focus.iter_mut() {
+        commands.entity(e).remove::<TextEditFocus>();
+
+        if text.sections[0].value.len() > **pos {
+            text.sections[0].value.remove(**pos);
+        }
+        commands.entity(e).remove::<CursorPosition>();
+        commands.entity(e).remove::<TextEditFocus>();
+    }
+}
+
+fn focus_text_box(
+    mut commands: Commands,
+    mut texts: Query<(&mut Text, Entity), (With<TextEditFocus>, Without<CursorPosition>)>,
+    display_cursor: Res<DisplayTextCursor>,
+    mut event_reader: EventReader<TextFocusEvent>,
+) {
+    for e in event_reader.read() {
+        for (mut text, text_e) in texts.iter_mut() {
+            if **e == text_e {
+                commands
+                    .entity(**e)
+                    .insert(CursorPosition(text.sections[0].value.len()));
+                text.sections[0].value.push_str(display_cursor.as_str());
             }
-            commands.entity(e).insert(TextEditFocus);
         }
     }
 }
 
-fn listen_keyboard_input(mut events: EventReader<KeyboardInput>, mut edit_text: Query<&mut Text, With<TextEditFocus>>) {
+fn listen_interaction(
+    mut commands: Commands,
+    input: Res<ButtonInput<MouseButton>>,
+    mut interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
+    mut text_focus: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    mut event_writer: EventWriter<TextFocusEvent>,
+) {
+    if interactions.is_empty() && input.just_pressed(MouseButton::Left) {
+        unfocus_text_box(&mut commands, &mut text_focus);
+    }
+
+    for (interaction, e) in interactions.iter_mut() {
+        if *interaction == Interaction::Pressed {
+            unfocus_text_box(&mut commands, &mut text_focus);
+
+            commands.entity(e).insert(TextEditFocus);
+            event_writer.send(TextFocusEvent(e));
+        }
+    }
+}
+
+fn listen_keyboard_input(
+    mut events: EventReader<KeyboardInput>,
+    mut edit_text: Query<(&mut Text, &mut CursorPosition), With<TextEditFocus>>,
+    display_cursor: Res<DisplayTextCursor>,
+) {
     for event in events.read() {
         // Only trigger changes when the key is first pressed.
         if event.state == ButtonState::Released {
             continue;
         }
 
-        for mut text in edit_text.iter_mut() {
+        for (mut text, mut pos) in edit_text.iter_mut() {
             if text.sections.len() > 0 {
+                let (first, second) = text.sections[0].value.split_at(**pos);
+                let mut first = String::from(first);
+                let mut second = String::from(second);
                 match &event.logical_key {
                     Key::Space => {
-                        text.sections[0].value.push(' ');
+                        first.push(' ');
+                        **pos += 1;
                     }
                     Key::Backspace => {
-                        text.sections[0].value.pop();
+                        first.pop();
                     }
                     Key::Character(character) => {
-                        text.sections[0].value.push_str(character);
+                        first.push_str(character);
+                        **pos += character.len();
+                    }
+                    Key::ArrowLeft => {
+                        if **pos > 0 {
+                            if let Some(c) = first.pop() {
+                                second.insert(1, c);
+                            }
+                            **pos -= 1;
+                        }
+                    }
+                    Key::ArrowRight => {
+                        if **pos < text.sections[0].value.len() - 1 {
+                            let c = second.remove(1);
+                            first.push(c);
+                            **pos += 1;
+                        }
+                    }
+                    Key::Home => {
+                        if **pos > 0 && **pos < text.sections[0].value.len() {
+                            text.sections[0].value.remove(**pos);
+                            first.clone_from(&(**display_cursor));
+                            second.clone_from(&text.sections[0].value);
+                            **pos = 0;
+                        }
+                    }
+                    Key::End => {
+                        if **pos < text.sections[0].value.len() - 1 {
+                            text.sections[0].value.remove(**pos);
+                            first.clone_from(&text.sections[0].value);
+                            second.clone_from(&(**display_cursor));
+                            **pos = text.sections[0].value.len();
+                        }
                     }
                     _ => continue,
                 }
+                text.sections[0].value = format!("{}{}", first, second);
             }
         }
     }

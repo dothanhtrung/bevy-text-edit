@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditPluginNoState, TextEditFocus, TextEditable};
+use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPluginNoState};
 
 fn main() {
     App::new()
@@ -28,12 +28,12 @@ fn setup(mut commands: Commands) {
         })
         .with_children(|parent| {
             parent.spawn((
-                TextEditable, // Mark text is editable
+                TextEditable,      // Mark text is editable
                 Interaction::None, // Mark entity is interactable
                 TextBundle::from_section(
                     "Input Text 1",
                     TextStyle {
-                        font_size: 20.,
+                        font_size: 30.,
                         ..default()
                     },
                 ),
@@ -46,7 +46,7 @@ fn setup(mut commands: Commands) {
                 TextBundle::from_section(
                     "Input Text 2",
                     TextStyle {
-                        font_size: 20.,
+                        font_size: 30.,
                         ..default()
                     },
                 ),

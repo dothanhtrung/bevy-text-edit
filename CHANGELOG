@@ -1,4 +1,14 @@
+0.0.3
+=====
+
+* Add text cursor.
+
+0.0.2
+=====
+
+* Allow specify state to run in.
+
 0.0.1
 =====
 
-* Basic function
+* Basic function.
