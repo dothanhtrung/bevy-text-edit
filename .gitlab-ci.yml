@@ -1,0 +1,23 @@
+image: "dothanhtrung/bevy-dev:latest"
+
+build:
+  stage: build
+  script:
+    - rustc --version && cargo --version  # Print version info for debugging
+    - cargo build --example basic
+    - cargo build --example no_state
+  cache:
+    key: build-cache
+    paths:
+      - target/
+
+publish:
+  stage: deploy
+  script:
+    - cargo publish --token $TOKEN
+  cache:
+    key: build-cache
+    paths:
+      - target/
+  only:
+    - tags
