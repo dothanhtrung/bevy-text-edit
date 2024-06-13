@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPluginNoState};
+use bevy_text_edit::{TextEditPluginNoState, TextEditable};
 
 fn main() {
     App::new()
@@ -41,7 +41,6 @@ fn setup(mut commands: Commands) {
 
             parent.spawn((
                 TextEditable,
-                TextEditFocus, // Focus edit text on this entity
                 Interaction::None,
                 TextBundle::from_section(
                     "Input Text 2",

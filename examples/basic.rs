@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPlugin};
+use bevy_text_edit::{TextEditable, TextEditPlugin};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -48,7 +48,6 @@ fn setup(mut commands: Commands) {
 
             parent.spawn((
                 TextEditable,
-                TextEditFocus, // Focus edit text on this entity
                 Interaction::None,
                 TextBundle::from_section(
                     "Input Text 2",

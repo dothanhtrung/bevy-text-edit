@@ -62,23 +62,7 @@ commands.spawn((
 ));
 ```
 
-Only text that is focused by clicking is get keyboard input.  
-If you want to make a text field editable by default, insert component `TextEditFocus` to it when spawn:
-
-```rust
-commands.spawn((
-    TextEditFocus, // Focus edit text on this entity
-    TextEditable, // Mark text is editable
-    Interaction::None, // Mark entity is interactable
-    TextBundle::from_section(
-        "Input Text 2",
-        TextStyle {
-            font_size: 20.,
-            ..default()
-        },
-    ),
-));
-```
+Only text that is focused by clicking gets keyboard input.
 
 License
 -------
