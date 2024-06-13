@@ -2,7 +2,7 @@
 
 //! ### Plugin
 //!
-//! Add plugin `EditTextPlugin` to the app and define which states it will run in:
+//! Add plugin `TextEditPlugin` to the app and define which states it will run in:
 //!
 //! ```rust
 //! #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
@@ -26,7 +26,7 @@
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
 //!         // Add the plugin
-//!         .add_plugins(EditTextPluginNoState)
+//!         .add_plugins(TextEditPluginNoState)
 //!         .add_systems(Startup, setup)
 //!         .run();
 //! }

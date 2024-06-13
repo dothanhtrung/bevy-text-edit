@@ -12,7 +12,7 @@ Quickstart
 
 ### Plugin
 
-Add plugin `EditTextPlugin` to the app and define which states it will run in:
+Add plugin `TextEditPlugin` to the app and define which states it will run in:
 
 ```rust
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
@@ -30,14 +30,14 @@ fn main() {
 }
 ```
 
-If you don't care to game state and want to always run input text, use `EditTextPluginNoState`:
+If you don't care to game state and want to always run input text, use `TextEditPluginNoState`:
 
 ```rust
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(EditTextPluginNoState)
+        .add_plugins(TextEditPluginNoState)
         .add_systems(Startup, setup)
         .run();
 }
