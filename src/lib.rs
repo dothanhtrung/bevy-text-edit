@@ -106,9 +106,11 @@ macro_rules! add_systems {
 
 const DEFAULT_CURSOR: &str = "|";
 
+/// Current position of cursor in the text
 #[derive(Component, Default, Deref, DerefMut)]
 pub struct CursorPosition(usize);
 
+/// The text that will be displayed as cursor. Default is `|`.
 #[derive(Resource, Deref, DerefMut)]
 pub struct DisplayTextCursor(String);
 
@@ -117,6 +119,7 @@ pub struct TextEditPlugin<T>
 where
     T: States,
 {
+    /// List of game state that this plugin will run in
     pub states: Option<Vec<T>>,
 }
 
@@ -138,6 +141,7 @@ where
     }
 }
 
+/// Use this if you don't care to state and want this plugin's systems run always.
 #[derive(Default)]
 pub struct TextEditPluginNoState;
 
@@ -154,14 +158,16 @@ enum FakeGameState {
     NA,
 }
 
+/// Mark a text entity is focused. Normally done by mouse click.
 #[derive(Component)]
 pub struct TextEditFocus;
 
+/// Mark a text is editable.
 #[derive(Component)]
 pub struct TextEditable;
 
 #[derive(Event, Deref, DerefMut)]
-pub struct TextFocusEvent(Entity);
+struct TextFocusEvent(Entity);
 
 fn unfocus_text_box(
     commands: &mut Commands,
