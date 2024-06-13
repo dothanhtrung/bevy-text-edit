@@ -1,10 +1,10 @@
 bevy_text_edit
 ==============
 
-[![crates.io](https://img.shields.io/crates/v/bevy_edit_text)](https://crates.io/crates/bevy_edit_text)
-[![docs.rs](https://docs.rs/bevy_edit_text/badge.svg)](https://docs.rs/bevy_edit_text)
-[![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-edit-text/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-edit-text)
-[![pipeline status](https://gitlab.com/kimtinh/bevy-edit-text/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-edit-text/-/commits/master)
+[![crates.io](https://img.shields.io/crates/v/bevy_text_edit)](https://crates.io/crates/bevy_text_edit)
+[![docs.rs](https://docs.rs/bevy_text_edit/badge.svg)](https://docs.rs/bevy_text_edit)
+[![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit)
+[![pipeline status](https://gitlab.com/kimtinh/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-text-edit/-/commits/master)
 
 
 Quickstart
@@ -31,6 +31,7 @@ fn main() {
 ```
 
 If you don't care to game state and want to always run input text, use `EditTextPluginNoState`:
+
 ```rust
 fn main() {
     App::new()
@@ -44,7 +45,8 @@ fn main() {
 
 ### Component
 
-Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable.
+Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable:
+
 ```rust
 commands.spawn((
     TextEditable, // Mark text is editable
@@ -61,6 +63,7 @@ commands.spawn((
 
 Only text that is focused by clicking is get keyboard input.  
 If you want to make a text field editable by default, insert component `TextEditFocus` to it when spawn:
+
 ```rust
 commands.spawn((
     TextEditFocus, // Focus edit text on this entity
@@ -85,6 +88,6 @@ Please see [LICENSE](./LICENSE).
 Compatible Bevy Versions
 ------------------------
 
-| bevy | bevy_edit_text         |
+| bevy | bevy_text_edit         |
 |------|------------------------|
 | 0.13 | 0.0.1, branch `master` |
