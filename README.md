@@ -6,6 +6,7 @@ bevy_text_edit
 [![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit)
 [![pipeline status](https://gitlab.com/kimtinh/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-text-edit/-/commits/master)
 
+![](https://i.imgur.com/jv6spf4.mp4)
 
 Quickstart
 ----------
@@ -88,6 +89,6 @@ Please see [LICENSE](./LICENSE).
 Compatible Bevy Versions
 ------------------------
 
-| bevy | bevy_text_edit         |
-|------|------------------------|
-| 0.13 | 0.0.1, branch `master` |
+| bevy | bevy_text_edit               |
+|------|------------------------------|
+| 0.13 | 0.0.1-0.0.3, branch `master` |
