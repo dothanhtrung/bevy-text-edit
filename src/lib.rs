@@ -1,23 +1,44 @@
 // Copyright 2024 Trung Do <dothanhtrung@pm.me>
 
-//! Add plugin `EditTextPlugin` to the app:
+//! ### Plugin
 //!
+//! Add plugin `EditTextPlugin` to the app and define which states it will run in:
+//!
+//! ```rust
+//! #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
+//! enum GameState {
+//!     #[default]
+//!     Menu,
+//! }
+//!
+//! fn main() {
+//!     App::new()
+//!         .add_plugins(DefaultPlugins)
+//!         // Add the plugin
+//!         .add_plugins(EditTextPlugin::default().in_state(vec![GameState::Menu]))
+//!         .run;
+//! }
+//! ```
+//!
+//! If you don't care to game state and want to always run input text, use `EditTextPluginNoState`:
 //! ```rust
 //! fn main() {
 //!     App::new()
 //!         .add_plugins(DefaultPlugins)
 //!         // Add the plugin
-//!         .add_plugins(EditTextPlugin)
-//!         .run;
+//!         .add_plugins(EditTextPluginNoState)
+//!         .add_systems(Startup, setup)
+//!         .run();
 //! }
 //! ```
+//!
+//! ### Component
 //!
 //! Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable.
 //! ```rust
 //! commands.spawn((
-//!     // Add the component
-//!     TextEditable,
-//!     Interaction::None,
+//!     TextEditable, // Mark text is editable
+//!     Interaction::None, // Mark entity is interactable
 //!     TextBundle::from_section(
 //!         "Input Text 1",
 //!         TextStyle {
@@ -32,9 +53,9 @@
 //! If you want to make a text field editable by default, insert component `TextEditFocus` to it when spawn:
 //! ```rust
 //! commands.spawn((
-//!     TextEditFocus,
-//!     TextEditable,
-//!     Interaction::None,
+//!     TextEditFocus, // Focus on this entity
+//!     TextEditable, // Mark text is editable
+//!     Interaction::None, // Mark entity is interactable
 //!     TextBundle::from_section(
 //!         "Input Text 2",
 //!         TextStyle {
@@ -46,15 +67,62 @@
 //! ```
 
 use bevy::app::{App, Plugin, Update};
-use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
-use bevy::prelude::{Changed, Commands, Component, Entity, EventReader, Query, Text, With};
+use bevy::input::ButtonState;
+use bevy::prelude::{
+    in_state, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs, Query, Resource,
+    States, Text, With,
+};
 use bevy::ui::Interaction;
 
-pub struct EditTextPlugin;
+const DEFAULT_CURSOR: &str = "|";
 
-impl Plugin for EditTextPlugin {
+#[derive(Resource, Deref, DerefMut)]
+pub struct TextCursor(String);
+
+#[derive(Default)]
+pub struct EditTextPlugin<T>
+where
+    T: States,
+{
+    pub states: Option<Vec<T>>,
+}
+
+impl<T> Plugin for EditTextPlugin<T>
+where
+    T: States,
+{
     fn build(&self, app: &mut App) {
+        app.insert_resource(TextCursor(DEFAULT_CURSOR.to_string()));
+
+        if let Some(states) = &self.states {
+            for state in states {
+                app.add_systems(
+                    Update,
+                    (change_focus, listen_keyboard_input).run_if(in_state(state.clone())),
+                );
+            }
+        } else {
+            app.add_systems(Update, (change_focus, listen_keyboard_input));
+        }
+    }
+}
+
+impl<T> EditTextPlugin<T>
+where
+    T: States,
+{
+    pub fn in_state(&mut self, states: Vec<T>) {
+        self.states = Some(states);
+    }
+}
+
+#[derive(Default)]
+pub struct EditTextPluginNoState;
+
+impl Plugin for EditTextPluginNoState {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(TextCursor(DEFAULT_CURSOR.to_string()));
         app.add_systems(Update, (change_focus, listen_keyboard_input));
     }
 }

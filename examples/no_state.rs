@@ -1,19 +1,12 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{EditTextPlugin, TextEditFocus, TextEditable};
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
-enum GameState {
-    #[default]
-    Menu,
-}
+use bevy_text_edit::{EditTextPluginNoState, TextEditFocus, TextEditable};
 
 fn main() {
     App::new()
-        .init_state::<GameState>()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(EditTextPlugin::default().in_state(vec![GameState::Menu]))
+        .add_plugins(EditTextPluginNoState)
         .add_systems(Startup, setup)
         .run();
 }
