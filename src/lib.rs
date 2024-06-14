@@ -230,7 +230,10 @@ fn listen_keyboard_input(
                         **pos += 1;
                     }
                     Key::Backspace => {
-                        first.pop();
+                        if **pos > 0 {
+                            first.pop();
+                            **pos -= 1;
+                        }
                     }
                     Key::Character(character) => {
                         first.push_str(character);
