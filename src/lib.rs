@@ -157,15 +157,18 @@ struct TextFocusEvent(Entity);
 fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    ignore_entity: Option<Entity>,
 ) {
     for (e, pos, mut text) in text_focus.iter_mut() {
-        commands.entity(e).remove::<TextEditFocus>();
+        if ignore_entity.is_none() || e != ignore_entity.unwrap() {
+            commands.entity(e).remove::<TextEditFocus>();
 
-        if text.sections[0].value.len() > **pos {
-            text.sections[0].value.remove(**pos);
+            if text.sections[0].value.len() > **pos {
+                text.sections[0].value.remove(**pos);
+            }
+            commands.entity(e).remove::<CursorPosition>();
+            commands.entity(e).remove::<TextEditFocus>();
         }
-        commands.entity(e).remove::<CursorPosition>();
-        commands.entity(e).remove::<TextEditFocus>();
     }
 }
 
@@ -191,19 +194,26 @@ fn listen_interaction(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
-    mut text_focus: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
     mut event_writer: EventWriter<TextFocusEvent>,
 ) {
     if interactions.is_empty() && input.just_pressed(MouseButton::Left) {
-        unfocus_text_box(&mut commands, &mut text_focus);
+        unfocus_text_box(&mut commands, &mut focusing_texts, None);
+        return;
     }
 
     for (interaction, e) in interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
-            unfocus_text_box(&mut commands, &mut text_focus);
+            let mut focusing_list = Vec::new();
+            for (focusing_e, _, _) in focusing_texts.iter() {
+                focusing_list.push(focusing_e);
+            }
 
-            commands.entity(e).insert(TextEditFocus);
-            event_writer.send(TextFocusEvent(e));
+            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e));
+            if !focusing_list.contains(&e) {
+                commands.entity(e).insert(TextEditFocus);
+                event_writer.send(TextFocusEvent(e));
+            }
         }
     }
 }
