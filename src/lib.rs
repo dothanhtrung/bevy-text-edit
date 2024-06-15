@@ -52,10 +52,10 @@
 //! Only text that is focused by clicking gets keyboard input.
 
 use bevy::app::{App, Plugin, Update};
-use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::input::ButtonState;
 use bevy::prelude::{
-    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter, in_state,
+    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
     IntoSystemConfigs, MouseButton, Query, Res, Resource, States, Text, With, Without,
 };
 use bevy::ui::Interaction;

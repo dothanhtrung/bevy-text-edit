@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditable, TextEditPlugin};
+use bevy_text_edit::{TextEditPlugin, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {

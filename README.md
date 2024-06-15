@@ -75,4 +75,4 @@ Compatible Bevy Versions
 
 | bevy | bevy_text_edit               |
 |------|------------------------------|
-| 0.13 | 0.0.1-0.0.3, branch `master` |
+| 0.13 | 0.0.1-0.0.4, branch `master` |
