@@ -60,31 +60,21 @@ use bevy::prelude::{
 };
 use bevy::ui::Interaction;
 
+macro_rules! plugin_systems {
+    ( ) => {
+        (listen_changing_focus, focus_text_box, listen_keyboard_input).chain()
+    };
+}
 macro_rules! add_systems {
     ($app: expr, $states: expr) => {
         $app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
             .add_event::<TextFocusEvent>();
         if let Some(states) = $states {
             for state in states {
-                $app.add_systems(
-                    Update,
-                    (
-                        listen_interaction,
-                        listen_keyboard_input,
-                        focus_text_box.after(listen_interaction),
-                    )
-                        .run_if(in_state(state.clone())),
-                );
+                $app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
             }
         } else {
-            $app.add_systems(
-                Update,
-                (
-                    listen_interaction,
-                    listen_keyboard_input,
-                    focus_text_box.after(listen_interaction),
-                ),
-            );
+            $app.add_systems(Update, plugin_systems!());
         }
     };
 }
@@ -190,7 +180,7 @@ fn focus_text_box(
     }
 }
 
-fn listen_interaction(
+fn listen_changing_focus(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
