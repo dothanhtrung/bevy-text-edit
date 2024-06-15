@@ -55,7 +55,7 @@ use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
+    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader,
     IntoSystemConfigs, MouseButton, Query, Res, Resource, States, Text, With, Without,
 };
 use bevy::ui::Interaction;
@@ -67,8 +67,7 @@ macro_rules! plugin_systems {
 }
 macro_rules! add_systems {
     ($app: expr, $states: expr) => {
-        $app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
-            .add_event::<TextFocusEvent>();
+        $app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()));
         if let Some(states) = $states {
             for state in states {
                 $app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
@@ -141,9 +140,6 @@ pub struct TextEditFocus;
 #[derive(Component)]
 pub struct TextEditable;
 
-#[derive(Event, Deref, DerefMut)]
-struct TextFocusEvent(Entity);
-
 fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
@@ -164,20 +160,15 @@ fn unfocus_text_box(
 
 fn focus_text_box(
     mut commands: Commands,
-    mut texts: Query<(&mut Text, Entity), (With<TextEditFocus>, Without<CursorPosition>)>,
+    mut focused_texts: Query<(&mut Text, Entity), (With<TextEditFocus>, Without<CursorPosition>)>,
     display_cursor: Res<DisplayTextCursor>,
-    mut event_reader: EventReader<TextFocusEvent>,
 ) {
-    for e in event_reader.read() {
-        for (mut text, text_e) in texts.iter_mut() {
-            if **e == text_e {
+        for (mut text, e) in focused_texts.iter_mut() {
                 commands
-                    .entity(**e)
+                    .entity(e)
                     .insert(CursorPosition(text.sections[0].value.len()));
                 text.sections[0].value.push_str(display_cursor.as_str());
-            }
         }
-    }
 }
 
 fn listen_changing_focus(
@@ -185,7 +176,6 @@ fn listen_changing_focus(
     input: Res<ButtonInput<MouseButton>>,
     mut interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
-    mut event_writer: EventWriter<TextFocusEvent>,
 ) {
     if interactions.is_empty() && input.just_pressed(MouseButton::Left) {
         unfocus_text_box(&mut commands, &mut focusing_texts, None);
@@ -202,7 +192,6 @@ fn listen_changing_focus(
             unfocus_text_box(&mut commands, &mut focusing_texts, Some(e));
             if !focusing_list.contains(&e) {
                 commands.entity(e).insert(TextEditFocus);
-                event_writer.send(TextFocusEvent(e));
             }
         }
     }
