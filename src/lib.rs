@@ -55,8 +55,8 @@ use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader,
-    IntoSystemConfigs, MouseButton, Query, Res, Resource, States, Text, With, Without,
+    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs,
+    MouseButton, Query, Res, Resource, States, Text, With, Without,
 };
 use bevy::ui::Interaction;
 
@@ -163,26 +163,35 @@ fn focus_text_box(
     mut focused_texts: Query<(&mut Text, Entity), (With<TextEditFocus>, Without<CursorPosition>)>,
     display_cursor: Res<DisplayTextCursor>,
 ) {
-        for (mut text, e) in focused_texts.iter_mut() {
-                commands
-                    .entity(e)
-                    .insert(CursorPosition(text.sections[0].value.len()));
-                text.sections[0].value.push_str(display_cursor.as_str());
-        }
+    for (mut text, e) in focused_texts.iter_mut() {
+        commands.entity(e).insert(CursorPosition(text.sections[0].value.len()));
+        text.sections[0].value.push_str(display_cursor.as_str());
+    }
 }
 
 fn listen_changing_focus(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
+    mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
+    other_interactions: Query<&Interaction, (Changed<Interaction>, Without<TextEditable>)>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
 ) {
-    if interactions.is_empty() && input.just_pressed(MouseButton::Left) {
+    let mut clicked_elsewhere = if input.just_pressed(MouseButton::Left) {
+        true
+    } else {
+        false
+    };
+    for oth_itr in other_interactions.iter() {
+        if *oth_itr == Interaction::Pressed {
+            clicked_elsewhere = true;
+        }
+    }
+    if text_interactions.is_empty() && clicked_elsewhere {
         unfocus_text_box(&mut commands, &mut focusing_texts, None);
         return;
     }
 
-    for (interaction, e) in interactions.iter_mut() {
+    for (interaction, e) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
             let mut focusing_list = Vec::new();
             for (focusing_e, _, _) in focusing_texts.iter() {

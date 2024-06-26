@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{CursorPosition, TextEditFocus, TextEditPlugin, TextEditable};
+use bevy_text_edit::{TextEditFocus, TextEditPlugin, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -70,7 +70,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn get_result(
-    texts: Query<(&Text, Option<&CursorPosition>), With<TextEditable>>,
+    texts: Query<&Text, With<TextEditable>>,
     interaction: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>,
 ) {
@@ -78,15 +78,8 @@ fn get_result(
         if *interaction == Interaction::Pressed {
             let mut result = String::new();
 
-            for (text, cur) in texts.iter() {
-                let mut edited_text = text.sections[0].value.clone();
-
-                // Remove text cursor if exists
-                if let Some(cur) = cur {
-                    edited_text.remove(**cur);
-                }
-
-                result = format!("{} {}", result, edited_text);
+            for text in texts.iter() {
+                result = format!("{} {}", result, text.sections[0].value);
             }
 
             if let Ok(mut result_box) = result_box.get_single_mut() {
