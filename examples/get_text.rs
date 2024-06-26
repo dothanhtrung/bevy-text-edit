@@ -1,0 +1,97 @@
+use bevy::prelude::*;
+
+use bevy_text_edit::{CursorPosition, TextEditFocus, TextEditPlugin, TextEditable};
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
+enum GameState {
+    #[default]
+    Menu,
+}
+
+#[derive(Component)]
+struct Result;
+
+fn main() {
+    App::new()
+        .init_state::<GameState>()
+        .add_plugins(DefaultPlugins)
+        // Add the plugin
+        .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
+        .add_systems(Startup, setup)
+        .add_systems(Update, get_result)
+        .run();
+}
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.),
+                height: Val::Percent(100.),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            let text_style = TextStyle {
+                font_size: 30.,
+                ..default()
+            };
+
+            parent.spawn((
+                TextEditable,      // Mark text is editable
+                TextEditFocus,     // Mark text is focused
+                Interaction::None, // Mark entity is interactable
+                TextBundle::from_section("Input Text 1", text_style.clone()),
+            ));
+
+            parent.spawn((
+                TextEditable,
+                Interaction::None,
+                TextBundle::from_section("Input Text 2", text_style.clone()),
+            ));
+
+            parent
+                .spawn(ButtonBundle {
+                    background_color: Color::DARK_GRAY.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle::from_section("Result".to_string(), text_style.clone()));
+                });
+
+            parent.spawn((Result, TextBundle::from_section("", text_style.clone())));
+        });
+}
+
+fn get_result(
+    texts: Query<(&Text, Option<&CursorPosition>), With<TextEditable>>,
+    interaction: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
+    mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>,
+) {
+    if let Ok(interaction) = interaction.get_single() {
+        if *interaction == Interaction::Pressed {
+            let mut result = String::new();
+
+            for (text, cur) in texts.iter() {
+                let mut edited_text = text.sections[0].value.clone();
+
+                // Remove text cursor if exists
+                if let Some(cur) = cur {
+                    edited_text.remove(**cur);
+                }
+
+                result = format!("{} {}", result, edited_text);
+            }
+
+            if let Ok(mut result_box) = result_box.get_single_mut() {
+                result_box.sections[0].value = result;
+            }
+        }
+    }
+}
