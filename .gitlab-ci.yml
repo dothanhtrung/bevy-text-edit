@@ -6,6 +6,7 @@ build:
     - rustc --version && cargo --version  # Print version info for debugging
     - cargo build --example basic
     - cargo build --example no_state
+    - cargo build --example get_text
   cache:
     key: build-cache
     paths:
