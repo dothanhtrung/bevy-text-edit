@@ -169,18 +169,14 @@ fn focus_text_box(
     }
 }
 
-fn listen_changing_focus(
+pub fn listen_changing_focus(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
     other_interactions: Query<&Interaction, (Changed<Interaction>, Without<TextEditable>)>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
 ) {
-    let mut clicked_elsewhere = if input.just_pressed(MouseButton::Left) {
-        true
-    } else {
-        false
-    };
+    let mut clicked_elsewhere = input.just_pressed(MouseButton::Left);
     for oth_itr in other_interactions.iter() {
         if *oth_itr == Interaction::Pressed {
             clicked_elsewhere = true;
@@ -218,7 +214,7 @@ fn listen_keyboard_input(
         }
 
         for (mut text, mut pos) in edit_text.iter_mut() {
-            if text.sections.len() > 0 {
+            if !text.sections.is_empty() {
                 let (first, second) = text.sections[0].value.split_at(**pos);
                 let mut first = String::from(first);
                 let mut second = String::from(second);

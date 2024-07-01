@@ -1,3 +1,9 @@
+0.0.5
+=====
+
+* Remove text cursor when pressed on non-editable text.
+* Public system `listen_changing_focus`.
+
 0.0.4
 =====
 

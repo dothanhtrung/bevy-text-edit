@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditFocus, TextEditPlugin, TextEditable};
+use bevy_text_edit::{listen_changing_focus, TextEditFocus, TextEditPlugin, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -18,7 +18,8 @@ fn main() {
         // Add the plugin
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
         .add_systems(Startup, setup)
-        .add_systems(Update, get_result)
+        // Get text after focus change to ensure text cursor is removed
+        .add_systems(Update, get_result.after(listen_changing_focus))
         .run();
 }
 
