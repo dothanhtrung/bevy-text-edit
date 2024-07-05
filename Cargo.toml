@@ -1,6 +1,6 @@
 [package]
 name = "bevy_text_edit"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ exclude = ["assets", "examples", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.13", features = ["bevy_text", "bevy_ui"], default-features = false }
+bevy = { version = "0.14", features = ["bevy_text", "bevy_ui", "bevy_state"], default-features = false }
 
 [dev-dependencies]
-bevy = { version = "0.13", features = ["dynamic_linking"] }
+bevy = { version = "0.14", features = ["dynamic_linking"] }

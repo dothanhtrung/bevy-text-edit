@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css::DARK_GRAY, prelude::*};
 
 use bevy_text_edit::{listen_changing_focus, TextEditFocus, TextEditPlugin, TextEditable};
 
@@ -59,7 +59,7 @@ fn setup(mut commands: Commands) {
 
             parent
                 .spawn(ButtonBundle {
-                    background_color: Color::DARK_GRAY.into(),
+                    background_color: DARK_GRAY.into(),
                     ..default()
                 })
                 .with_children(|parent| {
