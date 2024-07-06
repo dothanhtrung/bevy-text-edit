@@ -10,11 +10,11 @@ enum GameState {
 
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin need to be added before init_state
         .init_state::<GameState>()
-        .add_plugins(DefaultPlugins)
         // Add the plugin
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
-        .add_systems(Startup, setup)
+        .add_systems(OnEnter(GameState::Menu), setup)
         .run();
 }
 
