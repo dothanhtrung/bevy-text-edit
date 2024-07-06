@@ -229,6 +229,11 @@ fn listen_keyboard_input(
                             **pos -= 1;
                         }
                     }
+                    Key::Delete => {
+                        if second.len() > 1 {
+                            second.remove(1);
+                        }
+                    }
                     Key::Character(character) => {
                         first.push_str(character);
                         **pos += character.len();
