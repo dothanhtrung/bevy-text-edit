@@ -88,6 +88,7 @@ pub struct CursorPosition(usize);
 #[derive(Resource, Deref, DerefMut)]
 pub struct DisplayTextCursor(String);
 
+#[cfg(feature = "state")]
 #[derive(Default)]
 pub struct TextEditPlugin<T>
 where
@@ -97,6 +98,7 @@ where
     pub states: Option<Vec<T>>,
 }
 
+#[cfg(feature = "state")]
 impl<T> Plugin for TextEditPlugin<T>
 where
     T: States,
@@ -106,6 +108,7 @@ where
     }
 }
 
+#[cfg(feature = "state")]
 impl<T> TextEditPlugin<T>
 where
     T: States,
