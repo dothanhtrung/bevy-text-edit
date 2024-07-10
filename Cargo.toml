@@ -11,7 +11,7 @@ exclude = ["assets", "examples", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.14", features = ["bevy_text", "bevy_ui"], default-features = false }
+bevy = { version = "0.14", features = ["bevy_text", "bevy_ui", "bevy_gilrs"], default-features = false }
 
 [dev-dependencies]
 bevy = { version = "0.14", features = ["dynamic_linking"] }
