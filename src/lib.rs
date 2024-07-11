@@ -52,29 +52,19 @@
 //! Only text that is focused by clicking gets keyboard input.
 
 use bevy::app::{App, Plugin, Update};
-use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
+use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::{
-    in_state, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs,
-    MouseButton, Query, Res, Resource, States, Text, With, Without,
+    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs, MouseButton,
+    Query, Res, Resource, Text, With, Without,
 };
+#[cfg(feature = "state")]
+use bevy::prelude::{in_state, States};
 use bevy::ui::Interaction;
 
 macro_rules! plugin_systems {
     ( ) => {
         (listen_changing_focus, focus_text_box, listen_keyboard_input).chain()
-    };
-}
-macro_rules! add_systems {
-    ($app: expr, $states: expr) => {
-        $app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()));
-        if let Some(states) = $states {
-            for state in states {
-                $app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
-            }
-        } else {
-            $app.add_systems(Update, plugin_systems!());
-        }
     };
 }
 
@@ -104,7 +94,14 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        add_systems!(app, &self.states);
+        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()));
+        if let Some(states) = &self.states {
+            for state in states {
+                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
+            }
+        } else {
+            app.add_systems(Update, plugin_systems!());
+        }
     }
 }
 
@@ -124,15 +121,9 @@ pub struct TextEditPluginNoState;
 
 impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
-        let non: Option<Vec<FakeGameState>> = None;
-        add_systems!(app, non);
+        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+            .add_systems(Update, plugin_systems!());
     }
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
-enum FakeGameState {
-    #[default]
-    NA,
 }
 
 /// Mark a text entity is focused. Normally done by mouse click.
