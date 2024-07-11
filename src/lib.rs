@@ -71,8 +71,11 @@ macro_rules! plugin_systems {
 const DEFAULT_CURSOR: &str = "|";
 
 /// Current position of cursor in the text
-#[derive(Component, Default, Deref, DerefMut)]
-pub struct CursorPosition(usize);
+#[derive(Component, Default)]
+pub struct CursorPosition {
+    pub section: usize,
+    pub pos: usize,
+}
 
 /// The text that will be displayed as cursor. Default is `|`.
 #[derive(Resource, Deref, DerefMut)]
@@ -139,12 +142,12 @@ fn unfocus_text_box(
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
     ignore_entity: Option<Entity>,
 ) {
-    for (e, pos, mut text) in text_focus.iter_mut() {
+    for (e, cursor, mut text) in text_focus.iter_mut() {
         if ignore_entity.is_none() || e != ignore_entity.unwrap() {
             commands.entity(e).remove::<TextEditFocus>();
 
-            if text.sections[0].value.len() > **pos {
-                text.sections[0].value.remove(**pos);
+            if text.sections.len() > cursor.section && text.sections[cursor.section].value.len() > cursor.pos {
+                text.sections[cursor.section].value.remove(cursor.pos);
             }
             commands.entity(e).remove::<CursorPosition>();
             commands.entity(e).remove::<TextEditFocus>();
@@ -158,8 +161,16 @@ fn focus_text_box(
     display_cursor: Res<DisplayTextCursor>,
 ) {
     for (mut text, e) in focused_texts.iter_mut() {
-        commands.entity(e).insert(CursorPosition(text.sections[0].value.len()));
-        text.sections[0].value.push_str(display_cursor.as_str());
+        if !text.sections.is_empty() {
+            let section = text.sections.len() - 1;
+            let pos = text.sections[section].value.len();
+            commands.entity(e).insert(CursorPosition { section, pos });
+            text.sections
+                .last_mut()
+                .unwrap()
+                .value
+                .push_str(display_cursor.as_str());
+        }
     }
 }
 
@@ -207,65 +218,109 @@ fn listen_keyboard_input(
             continue;
         }
 
-        for (mut text, mut pos) in edit_text.iter_mut() {
-            if !text.sections.is_empty() {
-                let (first, second) = text.sections[0].value.split_at(**pos);
-                let mut first = String::from(first);
-                let mut second = String::from(second);
+        for (mut text, mut cursor) in edit_text.iter_mut() {
+            if text.sections.len() > cursor.section {
                 match &event.logical_key {
                     Key::Space => {
-                        first.push(' ');
-                        **pos += 1;
+                        text.sections[cursor.section].value.insert(cursor.pos, ' ');
+                        cursor.pos += 1;
                     }
                     Key::Backspace => {
-                        if **pos > 0 {
-                            first.pop();
-                            **pos -= 1;
+                        if cursor.pos > 0 {
+                            text.sections[cursor.section].value.remove(cursor.pos - 1);
+                            cursor.pos -= 1;
+                        } else if cursor.section > 0 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.section -= 1;
+                            text.sections[cursor.section].value.pop();
+                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                            cursor.pos = text.sections[cursor.section].value.len() - 1;
                         }
                     }
                     Key::Delete => {
-                        if second.len() > 1 {
-                            second.remove(1);
+                        if cursor.pos < text.sections[cursor.section].value.len() - 1 {
+                            text.sections[cursor.section].value.remove(cursor.pos + 1);
+                        } else if cursor.section < text.sections.len() - 1 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.section += 1;
+                            if !text.sections[cursor.section].value.is_empty() {
+                                text.sections[cursor.section].value.remove(0);
+                            }
+                            text.sections[cursor.section]
+                                .value
+                                .insert_str(0, display_cursor.as_str());
+                            cursor.pos = 0;
                         }
                     }
                     Key::Character(character) => {
-                        first.push_str(character);
-                        **pos += character.len();
+                        text.sections[cursor.section].value.insert_str(cursor.pos, character);
+                        cursor.pos += character.len();
                     }
                     Key::ArrowLeft => {
-                        if **pos > 0 {
-                            if let Some(c) = first.pop() {
-                                second.insert(1, c);
+                        if cursor.pos > 0 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.pos -= 1;
+                            text.sections[cursor.section]
+                                .value
+                                .insert_str(cursor.pos, display_cursor.as_str());
+                        } else if cursor.section > 0 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.section -= 1;
+                            if text.sections[cursor.section].value.is_empty() {
+                                text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                                cursor.pos = 0;
+                            } else {
+                                let last = text.sections[cursor.section].value.len() - 1;
+                                text.sections[cursor.section]
+                                    .value
+                                    .insert_str(last, display_cursor.as_str());
+                                cursor.pos = last;
                             }
-                            **pos -= 1;
                         }
                     }
                     Key::ArrowRight => {
-                        if **pos < text.sections[0].value.len() - 1 {
-                            let c = second.remove(1);
-                            first.push(c);
-                            **pos += 1;
+                        if cursor.pos < text.sections[cursor.section].value.len() - 1 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.pos += 1;
+                            text.sections[cursor.section]
+                                .value
+                                .insert_str(cursor.pos, display_cursor.as_str());
+                        } else if cursor.section < text.sections.len() - 1 {
+                            text.sections[cursor.section].value.remove(cursor.pos);
+
+                            cursor.section += 1;
+                            if text.sections[cursor.section].value.is_empty() {
+                                text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                                cursor.pos = 0;
+                            } else {
+                                text.sections[cursor.section]
+                                    .value
+                                    .insert_str(1, display_cursor.as_str());
+                                cursor.pos = 1;
+                            }
                         }
                     }
                     Key::Home => {
-                        if **pos > 0 && **pos < text.sections[0].value.len() {
-                            text.sections[0].value.remove(**pos);
-                            first.clone_from(&(**display_cursor));
-                            second.clone_from(&text.sections[0].value);
-                            **pos = 0;
-                        }
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section = 0;
+                        cursor.pos = 0;
+                        text.sections[0].value.insert_str(0, display_cursor.as_str());
                     }
                     Key::End => {
-                        if **pos < text.sections[0].value.len() - 1 {
-                            text.sections[0].value.remove(**pos);
-                            first.clone_from(&text.sections[0].value);
-                            second.clone_from(&(**display_cursor));
-                            **pos = text.sections[0].value.len();
-                        }
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section = text.sections.len() - 1;
+                        cursor.pos = text.sections[cursor.section].value.len();
+                        text.sections[cursor.section].value.push_str(display_cursor.as_str());
                     }
                     _ => continue,
                 }
-                text.sections[0].value = format!("{}{}", first, second);
             }
         }
     }
