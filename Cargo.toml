@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/kimtinh/bevy-text-edit"
 keywords = ["bevy"]
 description = "Bevy plugin for input text"
-exclude = ["assets", "examples", ".cargo"]
+exclude = ["assets", "examples", "tests", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
