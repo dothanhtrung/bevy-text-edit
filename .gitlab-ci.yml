@@ -1,24 +1,38 @@
 image: "dothanhtrung/bevy-dev:latest"
 
+before_script:
+  - sed -i '/^target-dir =/d' .cargo/config.toml
+
+cache: &global_cache
+  key: cargo_cache
+  paths:
+    - target/
+    - .cargo/registry/index
+    - .cargo/registry/cache
+    - .cargo/bin
+  policy: pull-push
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+
 check:
   stage: build
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - cargo check --example basic
     - cargo check --example no_state
     - cargo check --example get_text
   cache:
-    key: check-cache
-    paths:
-      - ../target/
+    <<: *global_cache
+    policy: pull
+
+test:
+  stage: test
+  script:
+    - cargo test --tests
 
 publish:
   stage: deploy
   script:
     - cargo publish --token $TOKEN
-  cache:
-    key: check-cache
-    paths:
-      - ../target/
   only:
     - tags
