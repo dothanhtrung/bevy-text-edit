@@ -50,7 +50,7 @@ Insert component `TextEditable` and `Interaction` into any text entity that need
 
 ```rust
 commands.spawn((
-    TextEditable, // Mark text is editable
+    TextEditable::default(), // Mark text is editable
     Interaction::None, // Mark entity is interactable
     TextBundle::from_section(
         "Input Text 1",

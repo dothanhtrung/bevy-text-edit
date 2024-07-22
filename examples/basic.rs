@@ -1,3 +1,4 @@
+use bevy::color::palettes::basic::{GREEN, LIME, RED, YELLOW};
 use bevy::prelude::*;
 
 use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPlugin};
@@ -34,29 +35,49 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
+            let section1 = TextSection {
+                value: "Section1".into(),
+                style: TextStyle {
+                    color: GREEN.into(),
+                    ..default()
+                },
+            };
+            let section2 = TextSection {
+                value: "Section2".into(),
+                style: TextStyle {
+                    color: RED.into(),
+                    ..default()
+                },
+            };
+            let section3 = TextSection {
+                value: "1234".into(),
+                style: TextStyle {
+                    color: LIME.into(),
+                    ..default()
+                },
+            };
+            let section4 = TextSection {
+                value: "5678".into(),
+                style: TextStyle {
+                    color: YELLOW.into(),
+                    ..default()
+                },
+            };
+
             parent.spawn((
-                TextEditable,      // Mark text is editable
-                TextEditFocus,     // Mark text is focused
-                Interaction::None, // Mark entity is interactable
-                TextBundle::from_section(
-                    "Input Text 1",
-                    TextStyle {
-                        font_size: 30.,
-                        ..default()
-                    },
-                ),
+                TextEditable::default(), // Mark text is editable
+                TextEditFocus,           // Mark text is focused
+                Interaction::None,       // Mark entity is interactable
+                TextBundle::from_sections(vec![section1, section2]),
             ));
 
             parent.spawn((
-                TextEditable,
+                TextEditable {
+                    allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+                    ..default()
+                },
                 Interaction::None,
-                TextBundle::from_section(
-                    "Input Text 2",
-                    TextStyle {
-                        font_size: 30.,
-                        ..default()
-                    },
-                ),
+                TextBundle::from_sections(vec![section3, section4]),
             ));
         });
 }

@@ -37,7 +37,7 @@
 //! Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable.
 //! ```rust
 //! commands.spawn((
-//!     TextEditable, // Mark text is editable
+//!     TextEditable::default(), // Mark text is editable
 //!     Interaction::None, // Mark entity is interactable
 //!     TextBundle::from_section(
 //!         "Input Text 1",
@@ -61,6 +61,7 @@ use bevy::prelude::{
 #[cfg(feature = "state")]
 use bevy::prelude::{in_state, States};
 use bevy::ui::Interaction;
+use regex_lite::Regex;
 
 macro_rules! plugin_systems {
     ( ) => {
@@ -134,8 +135,13 @@ impl Plugin for TextEditPluginNoState {
 pub struct TextEditFocus;
 
 /// Mark a text is editable.
-#[derive(Component)]
-pub struct TextEditable;
+#[derive(Component, Default)]
+pub struct TextEditable {
+    /// Character in this list won't be added to the text. Regex is supported.
+    pub ignore: Vec<String>,
+    /// If not empty, only character in this list will be added to the text. Regex is supported.
+    pub allow: Vec<String>,
+}
 
 fn unfocus_text_box(
     commands: &mut Commands,
@@ -209,7 +215,7 @@ pub fn listen_changing_focus(
 
 fn listen_keyboard_input(
     mut events: EventReader<KeyboardInput>,
-    mut edit_text: Query<(&mut Text, &mut CursorPosition), With<TextEditFocus>>,
+    mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
 ) {
     for event in events.read() {
@@ -218,10 +224,17 @@ fn listen_keyboard_input(
             continue;
         }
 
-        for (mut text, mut cursor) in edit_text.iter_mut() {
+        for (mut text, mut cursor, texteditable) in edit_text.iter_mut() {
+            let ignore_list = &texteditable.ignore;
+            let allow_list = &texteditable.allow;
+
             if text.sections.len() > cursor.section {
                 match &event.logical_key {
                     Key::Space => {
+                        if is_ignored(ignore_list, allow_list, " ".into()) {
+                            continue;
+                        }
+
                         text.sections[cursor.section].value.insert(cursor.pos, ' ');
                         cursor.pos += 1;
                     }
@@ -255,6 +268,10 @@ fn listen_keyboard_input(
                         }
                     }
                     Key::Character(character) => {
+                        if is_ignored(ignore_list, allow_list, character.to_string()) {
+                            continue;
+                        }
+
                         text.sections[cursor.section].value.insert_str(cursor.pos, character);
                         cursor.pos += character.len();
                     }
@@ -324,4 +341,34 @@ fn listen_keyboard_input(
             }
         }
     }
+}
+
+fn is_ignored(ignore_list: &Vec<String>, allow_list: &Vec<String>, key: String) -> bool {
+    for pattern in ignore_list {
+        if let Ok(re) = Regex::new(pattern) {
+            if re.is_match(&key) {
+                return true;
+            }
+        } else if *pattern == key {
+            return true;
+        }
+    }
+
+    if !allow_list.is_empty() {
+        let mut is_included = false;
+        for pattern in allow_list {
+            if let Ok(re) = Regex::new(pattern) {
+                if re.is_match(&key) {
+                    is_included = true;
+                    break;
+                }
+            } else if *pattern == key {
+                is_included = true;
+                break;
+            }
+        }
+        return !is_included;
+    }
+
+    false
 }

@@ -45,14 +45,14 @@ fn setup(mut commands: Commands) {
             };
 
             parent.spawn((
-                TextEditable,      // Mark text is editable
-                TextEditFocus,     // Mark text is focused
-                Interaction::None, // Mark entity is interactable
+                TextEditable::default(), // Mark text is editable
+                TextEditFocus,           // Mark text is focused
+                Interaction::None,       // Mark entity is interactable
                 TextBundle::from_section("Input Text 1", text_style.clone()),
             ));
 
             parent.spawn((
-                TextEditable,
+                TextEditable::default(),
                 Interaction::None,
                 TextBundle::from_section("Input Text 2", text_style.clone()),
             ));
