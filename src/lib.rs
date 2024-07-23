@@ -20,36 +20,48 @@
 //! }
 //! ```
 //!
-//! If you don't care to game state and want to always run input text, use `EditTextPluginNoState`:
+//! If you don't care to game state and want to always run input text, use `TextEditPluginNoState`:
 //! ```rust
-//! fn main() {
-//!     App::new()
-//!         .add_plugins(DefaultPlugins)
-//!         // Add the plugin
-//!         .add_plugins(TextEditPluginNoState)
-//!         .add_systems(Startup, setup)
-//!         .run();
-//! }
+//! App::new()
+//!     .add_plugins(DefaultPlugins)
+//!     // Add the plugin
+//!     .add_plugins(TextEditPluginNoState)
+//!     .add_systems(Startup, setup)
+//!     .run();
 //! ```
 //!
 //! ### Component
 //!
-//! Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable.
+//! Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable:
+//!
 //! ```rust
 //! commands.spawn((
 //!     TextEditable::default(), // Mark text is editable
-//!     Interaction::None, // Mark entity is interactable
+//!     Interaction::None,       // Mark entity is interactable
 //!     TextBundle::from_section(
 //!         "Input Text 1",
-//!         TextStyle {
-//!             font_size: 20.,
-//!             ..default()
-//!         },
+//!         TextStyle::default(),
 //!     ),
 //! ));
 //! ```
-//!
+//! 
 //! Only text that is focused by clicking gets keyboard input.
+//! 
+//! 
+//! It is also possible to limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
+//! ```rust
+//! commands.spawn((
+//!     TextEditable {
+//!         allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+//!         ignore: vec!["5".into()],                // Ignore number 5
+//!     },
+//!     Interaction::None,
+//!     TextBundle::from_section(
+//!         "Input Text 1",
+//!         TextStyle::default(),
+//!     ),
+//! ));
+//! ```
 
 use bevy::app::{App, Plugin, Update};
 use bevy::input::ButtonState;
@@ -82,6 +94,7 @@ pub struct CursorPosition {
 #[derive(Resource, Deref, DerefMut)]
 pub struct DisplayTextCursor(String);
 
+/// The main plugin
 #[cfg(feature = "state")]
 #[derive(Default)]
 pub struct TextEditPlugin<T>
@@ -134,12 +147,26 @@ impl Plugin for TextEditPluginNoState {
 #[derive(Component)]
 pub struct TextEditFocus;
 
-/// Mark a text is editable.
+/// Mark a text is editable.  
+/// You can limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
+/// ```rust
+/// commands.spawn((
+///     TextEditable {
+///         allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+///         ignore: vec!["5".into()],                // Ignore number 5
+///     },
+///     Interaction::None,
+///     TextBundle::from_section(
+///         "Input Text 1",
+///         TextStyle::default(),
+///     ),
+/// ));
+/// ```
 #[derive(Component, Default)]
 pub struct TextEditable {
-    /// Character in this list won't be added to the text. Regex is supported.
+    /// Character in this list won't be added to the text.
     pub ignore: Vec<String>,
-    /// If not empty, only character in this list will be added to the text. Regex is supported.
+    /// If not empty, only character in this list will be added to the text.
     pub allow: Vec<String>,
 }
 
