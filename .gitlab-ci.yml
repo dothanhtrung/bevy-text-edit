@@ -33,6 +33,6 @@ test:
 publish:
   stage: deploy
   script:
-    - cargo publish --token $TOKEN
+    - cargo publish
   only:
     - tags
