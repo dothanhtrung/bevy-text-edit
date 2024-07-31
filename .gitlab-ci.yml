@@ -19,8 +19,7 @@ check:
   stage: build
   script:
     - rustc --version && cargo --version  # Print version info for debugging
-    - cargo check --example no_state
-    - cargo check --example get_text
+    - cargo check --examples
   cache:
     <<: *global_cache
     policy: pull
@@ -33,6 +32,6 @@ test:
 publish:
   stage: deploy
   script:
-    - cargo publish
+    - cargo publish --token $CARGO_REGISTRY_TOKEN
   only:
     - tags
