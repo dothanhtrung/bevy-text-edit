@@ -62,12 +62,12 @@ commands.spawn((
 Only text that is focused by clicking gets keyboard input.
 
 
-It is also possible to limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
+It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
 ```rust
 commands.spawn((
     TextEditable {
-        allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-        ignore: vec!["5".into()],                // Ignore number 5
+        filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+        filter_out: vec!["5".into()],                // Ignore number 5
     },
     Interaction::None,
     TextBundle::from_section(
@@ -88,5 +88,5 @@ Compatible Bevy Versions
 
 | bevy | bevy_text_edit               |
 |------|------------------------------|
-| 0.14 | 0.1-0.2, branch `master`         |
+| 0.14 | 0.1-0.3, branch `master`     |
 | 0.13 | 0.0.1-0.0.5                  |

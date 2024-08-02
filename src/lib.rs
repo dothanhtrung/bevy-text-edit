@@ -48,12 +48,13 @@
 //! Only text that is focused by clicking gets keyboard input.
 //!
 //!
-//! It is also possible to limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
+//! It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
 //! ```rust
 //! commands.spawn((
 //!     TextEditable {
-//!         allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-//!         ignore: vec!["5".into()],                // Ignore number 5
+//!         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+//!         filter_out: vec!["5".into()],                // Ignore number 5
+//!         ..default()
 //!     },
 //!     Interaction::None,
 //!     TextBundle::from_section(
@@ -148,12 +149,12 @@ impl Plugin for TextEditPluginNoState {
 pub struct TextEditFocus;
 
 /// Mark a text is editable.  
-/// You can limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
+/// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
 /// ```rust
 /// commands.spawn((
 ///     TextEditable {
-///         allow: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-///         ignore: vec!["5".into()],                // Ignore number 5
+///         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+///         filter_out: vec!["5".into()],                // Ignore number 5
 ///     },
 ///     Interaction::None,
 ///     TextBundle::from_section(
