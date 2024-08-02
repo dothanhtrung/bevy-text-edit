@@ -223,7 +223,11 @@ fn setup(ignore: Vec<String>, allow: Vec<String>) -> (App, Entity, Entity) {
         .with_children(|parent| {
             text1 = parent
                 .spawn((
-                    TextEditable { ignore, allow },
+                    TextEditable {
+                        filter_out: ignore,
+                        filter_in: allow,
+                        ..default()
+                    },
                     TextEditFocus,
                     Interaction::None,
                     TextBundle::from_sections(vec![text1_section1, text1_section2]),

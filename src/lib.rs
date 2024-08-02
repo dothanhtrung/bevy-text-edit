@@ -44,10 +44,10 @@
 //!     ),
 //! ));
 //! ```
-//! 
+//!
 //! Only text that is focused by clicking gets keyboard input.
-//! 
-//! 
+//!
+//!
 //! It is also possible to limit which characters are allowed to enter through `allow` and `ignore` attribute. Regex is supported:
 //! ```rust
 //! commands.spawn((
@@ -162,12 +162,26 @@ pub struct TextEditFocus;
 ///     ),
 /// ));
 /// ```
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
-    pub ignore: Vec<String>,
+    pub filter_out: Vec<String>,
+
     /// If not empty, only character in this list will be added to the text.
-    pub allow: Vec<String>,
+    pub filter_in: Vec<String>,
+
+    /// Maximum text length. Default is 254.
+    pub max_length: usize,
+}
+
+impl Default for TextEditable {
+    fn default() -> Self {
+        Self {
+            filter_out: Default::default(),
+            filter_in: Default::default(),
+            max_length: 254,
+        }
+    }
 }
 
 fn unfocus_text_box(
@@ -252,119 +266,127 @@ fn listen_keyboard_input(
         }
 
         for (mut text, mut cursor, texteditable) in edit_text.iter_mut() {
-            let ignore_list = &texteditable.ignore;
-            let allow_list = &texteditable.allow;
+            let ignore_list = &texteditable.filter_out;
+            let allow_list = &texteditable.filter_in;
+            let mut text_len = 0;
 
-            if text.sections.len() > cursor.section {
-                match &event.logical_key {
-                    Key::Space => {
-                        if is_ignored(ignore_list, allow_list, " ".into()) {
-                            continue;
-                        }
+            if text.sections.len() <= cursor.section {
+                continue;
+            }
 
-                        text.sections[cursor.section].value.insert(cursor.pos, ' ');
-                        cursor.pos += 1;
+            for section in &text.sections {
+                text_len += section.value.len();
+            }
+
+            match &event.logical_key {
+                Key::Space => {
+                    if is_ignored(ignore_list, allow_list, " ".into()) || text_len > texteditable.max_length {
+                        continue;
                     }
-                    Key::Backspace => {
-                        if cursor.pos > 0 {
-                            text.sections[cursor.section].value.remove(cursor.pos - 1);
-                            cursor.pos -= 1;
-                        } else if cursor.section > 0 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
 
-                            cursor.section -= 1;
-                            text.sections[cursor.section].value.pop();
-                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
-                            cursor.pos = text.sections[cursor.section].value.len() - 1;
-                        }
-                    }
-                    Key::Delete => {
-                        if cursor.pos < text.sections[cursor.section].value.len() - 1 {
-                            text.sections[cursor.section].value.remove(cursor.pos + 1);
-                        } else if cursor.section < text.sections.len() - 1 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
-
-                            cursor.section += 1;
-                            if !text.sections[cursor.section].value.is_empty() {
-                                text.sections[cursor.section].value.remove(0);
-                            }
-                            text.sections[cursor.section]
-                                .value
-                                .insert_str(0, display_cursor.as_str());
-                            cursor.pos = 0;
-                        }
-                    }
-                    Key::Character(character) => {
-                        if is_ignored(ignore_list, allow_list, character.to_string()) {
-                            continue;
-                        }
-
-                        text.sections[cursor.section].value.insert_str(cursor.pos, character);
-                        cursor.pos += character.len();
-                    }
-                    Key::ArrowLeft => {
-                        if cursor.pos > 0 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
-
-                            cursor.pos -= 1;
-                            text.sections[cursor.section]
-                                .value
-                                .insert_str(cursor.pos, display_cursor.as_str());
-                        } else if cursor.section > 0 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
-
-                            cursor.section -= 1;
-                            if text.sections[cursor.section].value.is_empty() {
-                                text.sections[cursor.section].value.push_str(display_cursor.as_str());
-                                cursor.pos = 0;
-                            } else {
-                                let last = text.sections[cursor.section].value.len() - 1;
-                                text.sections[cursor.section]
-                                    .value
-                                    .insert_str(last, display_cursor.as_str());
-                                cursor.pos = last;
-                            }
-                        }
-                    }
-                    Key::ArrowRight => {
-                        if cursor.pos < text.sections[cursor.section].value.len() - 1 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
-
-                            cursor.pos += 1;
-                            text.sections[cursor.section]
-                                .value
-                                .insert_str(cursor.pos, display_cursor.as_str());
-                        } else if cursor.section < text.sections.len() - 1 {
-                            text.sections[cursor.section].value.remove(cursor.pos);
-
-                            cursor.section += 1;
-                            if text.sections[cursor.section].value.is_empty() {
-                                text.sections[cursor.section].value.push_str(display_cursor.as_str());
-                                cursor.pos = 0;
-                            } else {
-                                text.sections[cursor.section]
-                                    .value
-                                    .insert_str(1, display_cursor.as_str());
-                                cursor.pos = 1;
-                            }
-                        }
-                    }
-                    Key::Home => {
-                        text.sections[cursor.section].value.remove(cursor.pos);
-
-                        cursor.section = 0;
-                        cursor.pos = 0;
-                        text.sections[0].value.insert_str(0, display_cursor.as_str());
-                    }
-                    Key::End => {
-                        text.sections[cursor.section].value.remove(cursor.pos);
-
-                        cursor.section = text.sections.len() - 1;
-                        cursor.pos = text.sections[cursor.section].value.len();
-                        text.sections[cursor.section].value.push_str(display_cursor.as_str());
-                    }
-                    _ => continue,
+                    text.sections[cursor.section].value.insert(cursor.pos, ' ');
+                    cursor.pos += 1;
                 }
+                Key::Backspace => {
+                    if cursor.pos > 0 {
+                        text.sections[cursor.section].value.remove(cursor.pos - 1);
+                        cursor.pos -= 1;
+                    } else if cursor.section > 0 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section -= 1;
+                        text.sections[cursor.section].value.pop();
+                        text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                        cursor.pos = text.sections[cursor.section].value.len() - 1;
+                    }
+                }
+                Key::Delete => {
+                    if cursor.pos < text.sections[cursor.section].value.len() - 1 {
+                        text.sections[cursor.section].value.remove(cursor.pos + 1);
+                    } else if cursor.section < text.sections.len() - 1 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section += 1;
+                        if !text.sections[cursor.section].value.is_empty() {
+                            text.sections[cursor.section].value.remove(0);
+                        }
+                        text.sections[cursor.section]
+                            .value
+                            .insert_str(0, display_cursor.as_str());
+                        cursor.pos = 0;
+                    }
+                }
+                Key::Character(character) => {
+                    if is_ignored(ignore_list, allow_list, character.to_string()) || text_len > texteditable.max_length
+                    {
+                        continue;
+                    }
+
+                    text.sections[cursor.section].value.insert_str(cursor.pos, character);
+                    cursor.pos += character.len();
+                }
+                Key::ArrowLeft => {
+                    if cursor.pos > 0 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.pos -= 1;
+                        text.sections[cursor.section]
+                            .value
+                            .insert_str(cursor.pos, display_cursor.as_str());
+                    } else if cursor.section > 0 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section -= 1;
+                        if text.sections[cursor.section].value.is_empty() {
+                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                            cursor.pos = 0;
+                        } else {
+                            let last = text.sections[cursor.section].value.len() - 1;
+                            text.sections[cursor.section]
+                                .value
+                                .insert_str(last, display_cursor.as_str());
+                            cursor.pos = last;
+                        }
+                    }
+                }
+                Key::ArrowRight => {
+                    if cursor.pos < text.sections[cursor.section].value.len() - 1 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.pos += 1;
+                        text.sections[cursor.section]
+                            .value
+                            .insert_str(cursor.pos, display_cursor.as_str());
+                    } else if cursor.section < text.sections.len() - 1 {
+                        text.sections[cursor.section].value.remove(cursor.pos);
+
+                        cursor.section += 1;
+                        if text.sections[cursor.section].value.is_empty() {
+                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                            cursor.pos = 0;
+                        } else {
+                            text.sections[cursor.section]
+                                .value
+                                .insert_str(1, display_cursor.as_str());
+                            cursor.pos = 1;
+                        }
+                    }
+                }
+                Key::Home => {
+                    text.sections[cursor.section].value.remove(cursor.pos);
+
+                    cursor.section = 0;
+                    cursor.pos = 0;
+                    text.sections[0].value.insert_str(0, display_cursor.as_str());
+                }
+                Key::End => {
+                    text.sections[cursor.section].value.remove(cursor.pos);
+
+                    cursor.section = text.sections.len() - 1;
+                    cursor.pos = text.sections[cursor.section].value.len();
+                    text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                }
+                _ => continue,
             }
         }
     }
