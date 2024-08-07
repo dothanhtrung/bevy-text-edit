@@ -171,7 +171,7 @@ pub struct TextEditable {
     /// If not empty, only character in this list will be added to the text.
     pub filter_in: Vec<String>,
 
-    /// Maximum text length. Default is 254.
+    /// Maximum text length. Default is 254. 0 means unlimited.
     pub max_length: usize,
 }
 
@@ -281,7 +281,9 @@ fn listen_keyboard_input(
 
             match &event.logical_key {
                 Key::Space => {
-                    if is_ignored(ignore_list, allow_list, " ".into()) || text_len > texteditable.max_length {
+                    if is_ignored(ignore_list, allow_list, " ".into())
+                        || (texteditable.max_length > 0 && text_len > texteditable.max_length)
+                    {
                         continue;
                     }
 
@@ -318,7 +320,8 @@ fn listen_keyboard_input(
                     }
                 }
                 Key::Character(character) => {
-                    if is_ignored(ignore_list, allow_list, character.to_string()) || text_len > texteditable.max_length
+                    if is_ignored(ignore_list, allow_list, character.to_string())
+                        || (texteditable.max_length > 0 && text_len > texteditable.max_length)
                     {
                         continue;
                     }
