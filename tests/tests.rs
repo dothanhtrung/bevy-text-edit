@@ -17,7 +17,7 @@ const T2_S2: &str = "Text2_Section2";
 
 #[test]
 fn arrow() {
-    let (mut app, text1_e, _) = setup(vec![], vec![]);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 0);
 
     // 1 Arrow left
     send_key(app.world_mut(), KeyCode::ArrowLeft, Key::ArrowLeft);
@@ -46,7 +46,7 @@ fn arrow() {
 
 #[test]
 fn backspace() {
-    let (mut app, text1_e, _) = setup(vec![], vec![]);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 0);
 
     // 1 Backspace
     send_key(app.world_mut(), KeyCode::Backspace, Key::Backspace);
@@ -67,7 +67,7 @@ fn backspace() {
 
 #[test]
 fn input_text() {
-    let (mut app, text1_e, _) = setup(vec![], vec![]);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 0);
 
     send_key(app.world_mut(), KeyCode::Space, Key::Space);
     send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
@@ -80,7 +80,7 @@ fn input_text() {
 
 #[test]
 fn delete() {
-    let (mut app, text1_e, _) = setup(vec![], vec![]);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 0);
 
     // Delete 1
     send_key(app.world_mut(), KeyCode::ArrowLeft, Key::ArrowLeft);
@@ -104,7 +104,7 @@ fn delete() {
 
 #[test]
 fn home_end() {
-    let (mut app, text1_e, _) = setup(vec![], vec![]);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 0);
 
     // Home
     send_key(app.world_mut(), KeyCode::Home, Key::Home);
@@ -135,13 +135,13 @@ fn home_end() {
 
 #[test]
 fn ignore_char_test() {
-    let (mut app, text1_e, _) = setup(vec!["a".into(), " ".into(), "[1-3]".into()], vec![]);
+    let (mut app, text1_e, _) = setup(vec!["a".into(), " ".into(), "[1-3]".into()], vec![], 0);
 
     send_key(app.world_mut(), KeyCode::Space, Key::Space);
     send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("b".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("2".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("4".into()));
+    send_key(app.world_mut(), KeyCode::KeyB, Key::Character("b".into()));
+    send_key(app.world_mut(), KeyCode::Digit2, Key::Character("2".into()));
+    send_key(app.world_mut(), KeyCode::Digit4, Key::Character("4".into()));
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
@@ -151,20 +151,35 @@ fn ignore_char_test() {
 
 #[test]
 fn allow_char_test() {
-    let (mut app, text1_e, _) = setup(vec![], vec!["a".into(), " ".into(), "[1-3]".into()]);
+    let (mut app, text1_e, _) = setup(vec![], vec!["a".into(), " ".into(), "[1-3]".into()], 0);
 
     send_key(app.world_mut(), KeyCode::Space, Key::Space);
     send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("b".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("0".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("1".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("3".into()));
-    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("4".into()));
+    send_key(app.world_mut(), KeyCode::KeyB, Key::Character("b".into()));
+    send_key(app.world_mut(), KeyCode::Digit0, Key::Character("0".into()));
+    send_key(app.world_mut(), KeyCode::Digit1, Key::Character("1".into()));
+    send_key(app.world_mut(), KeyCode::Digit3, Key::Character("3".into()));
+    send_key(app.world_mut(), KeyCode::Digit4, Key::Character("4".into()));
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
     assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
     assert_eq!(text1.sections[1].value, "Text1_Section2 a13|".to_string());
+}
+
+#[test]
+fn max_length() {
+    let (mut app, text1_e, _) = setup(vec![], vec![], 30);
+
+    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
+    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
+    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
+    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
+    send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
+
+    app.update();
+    let text1 = app.world().get::<Text>(text1_e).unwrap();
+    assert_eq!(text1.sections[1].value, "Text1_Section2aa|".to_string());
 }
 
 #[cfg(feature = "state")]
@@ -174,7 +189,7 @@ enum GameState {
     Menu,
 }
 
-fn setup(ignore: Vec<String>, allow: Vec<String>) -> (App, Entity, Entity) {
+fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, Entity, Entity) {
     let mut app = App::new();
     let mut text1 = Entity::from_raw(0);
     let mut text2 = Entity::from_raw(0);
@@ -226,6 +241,7 @@ fn setup(ignore: Vec<String>, allow: Vec<String>) -> (App, Entity, Entity) {
                     TextEditable {
                         filter_out: ignore,
                         filter_in: allow,
+                        max_length,
                         ..default()
                     },
                     TextEditFocus,
