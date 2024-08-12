@@ -74,6 +74,7 @@ fn setup(mut commands: Commands) {
             parent.spawn((
                 TextEditable {
                     filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+                    blink: true,
                     ..default()
                 },
                 Interaction::None,

@@ -69,7 +69,7 @@ use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::{
     ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs, MouseButton,
-    Query, Res, Resource, Text, With, Without,
+    Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, With, Without,
 };
 #[cfg(feature = "state")]
 use bevy::prelude::{in_state, States};
@@ -78,13 +78,20 @@ use regex_lite::Regex;
 
 macro_rules! plugin_systems {
     ( ) => {
-        (listen_changing_focus, focus_text_box, listen_keyboard_input).chain()
+        (
+            listen_changing_focus,
+            focus_text_box,
+            listen_keyboard_input,
+            blink_cursor,
+        )
+            .chain()
     };
 }
 
 const DEFAULT_CURSOR: &str = "|";
+const BLINK_INTERVAL: f32 = 0.5;
 
-/// Current position of cursor in the text
+/// Current position of cursor in the text.
 #[derive(Component, Default)]
 pub struct CursorPosition {
     pub section: usize,
@@ -95,6 +102,10 @@ pub struct CursorPosition {
 #[derive(Resource, Deref, DerefMut)]
 pub struct DisplayTextCursor(String);
 
+/// Text cursor blink interval in millisecond.
+#[derive(Resource, Deref, DerefMut)]
+pub struct BlinkInterval(Timer);
+
 /// The main plugin
 #[cfg(feature = "state")]
 #[derive(Default)]
@@ -102,7 +113,7 @@ pub struct TextEditPlugin<T>
 where
     T: States,
 {
-    /// List of game state that this plugin will run in
+    /// List of game state that this plugin will run in.
     pub states: Option<Vec<T>>,
 }
 
@@ -112,7 +123,8 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()));
+        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)));
         if let Some(states) = &self.states {
             for state in states {
                 app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
@@ -140,6 +152,7 @@ pub struct TextEditPluginNoState;
 impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
         app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
             .add_systems(Update, plugin_systems!());
     }
 }
@@ -173,6 +186,9 @@ pub struct TextEditable {
 
     /// Maximum text length. Default is 254. 0 means unlimited.
     pub max_length: usize,
+
+    /// Blink the text cursor.
+    pub blink: bool,
 }
 
 impl Default for TextEditable {
@@ -181,6 +197,7 @@ impl Default for TextEditable {
             filter_out: Default::default(),
             filter_in: Default::default(),
             max_length: 254,
+            blink: false,
         }
     }
 }
@@ -392,6 +409,32 @@ fn listen_keyboard_input(
                 }
                 _ => continue,
             }
+        }
+    }
+}
+
+fn blink_cursor(
+    time: Res<Time>,
+    mut blink_interval: ResMut<BlinkInterval>,
+    display_text_cursor: Res<DisplayTextCursor>,
+    mut query: Query<(&mut Text, &CursorPosition, &TextEditable), With<TextEditFocus>>,
+) {
+    blink_interval.tick(time.delta());
+    for (mut text, cursor_pos, text_editable) in query.iter_mut() {
+        if text_editable.blink
+            && blink_interval.just_finished()
+            && text.sections.len() > cursor_pos.section
+            && text.sections[cursor_pos.section].value.len() > cursor_pos.pos
+        {
+            let current_cursor = text.sections[cursor_pos.section].value.as_bytes()[cursor_pos.pos] as char;
+            let next_cursor: String = if current_cursor.to_string() != **display_text_cursor {
+                (**display_text_cursor).clone()
+            } else {
+                " ".into()
+            };
+            text.sections[cursor_pos.section]
+                .value
+                .replace_range(cursor_pos.pos..(cursor_pos.pos + 1), next_cursor.as_str());
         }
     }
 }
