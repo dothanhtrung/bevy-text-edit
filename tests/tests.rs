@@ -2,6 +2,7 @@ use bevy::input::{ButtonState, InputPlugin};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
+use bevy::time::TimePlugin;
 use bevy_text_edit::{TextEditable, TextEditFocus};
 
 #[cfg(feature = "state")]
@@ -199,6 +200,7 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
         WindowPlugin::default(),
         InputPlugin,
         StatesPlugin,
+        TimePlugin,
         TextEditPlugin::new(vec![GameState::Menu]),
     ))
     .init_state::<GameState>();
