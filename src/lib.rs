@@ -88,7 +88,7 @@ macro_rules! plugin_systems {
     };
 }
 
-const DEFAULT_CURSOR: &str = "|";
+const DEFAULT_CURSOR: char = '|';
 const BLINK_INTERVAL: f32 = 0.5;
 
 /// Current position of cursor in the text.
@@ -100,7 +100,7 @@ pub struct CursorPosition {
 
 /// The text that will be displayed as cursor. Default is `|`.
 #[derive(Resource, Deref, DerefMut)]
-pub struct DisplayTextCursor(String);
+pub struct DisplayTextCursor(char);
 
 /// Text cursor blink interval in millisecond.
 #[derive(Resource, Deref, DerefMut)]
@@ -123,7 +123,7 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)));
         if let Some(states) = &self.states {
             for state in states {
@@ -151,7 +151,7 @@ pub struct TextEditPluginNoState;
 
 impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR.to_string()))
+        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
             .add_systems(Update, plugin_systems!());
     }
@@ -230,11 +230,7 @@ fn focus_text_box(
             let section = text.sections.len() - 1;
             let pos = text.sections[section].value.len();
             commands.entity(e).insert(CursorPosition { section, pos });
-            text.sections
-                .last_mut()
-                .unwrap()
-                .value
-                .push_str(display_cursor.as_str());
+            text.sections.last_mut().unwrap().value.push(**display_cursor);
         }
     }
 }
@@ -316,7 +312,7 @@ fn listen_keyboard_input(
 
                         cursor.section -= 1;
                         text.sections[cursor.section].value.pop();
-                        text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                        text.sections[cursor.section].value.push(**display_cursor);
                         cursor.pos = text.sections[cursor.section].value.len() - 1;
                     }
                 }
@@ -330,9 +326,7 @@ fn listen_keyboard_input(
                         if !text.sections[cursor.section].value.is_empty() {
                             text.sections[cursor.section].value.remove(0);
                         }
-                        text.sections[cursor.section]
-                            .value
-                            .insert_str(0, display_cursor.as_str());
+                        text.sections[cursor.section].value.insert(0, **display_cursor);
                         cursor.pos = 0;
                     }
                 }
@@ -351,21 +345,17 @@ fn listen_keyboard_input(
                         text.sections[cursor.section].value.remove(cursor.pos);
 
                         cursor.pos -= 1;
-                        text.sections[cursor.section]
-                            .value
-                            .insert_str(cursor.pos, display_cursor.as_str());
+                        text.sections[cursor.section].value.insert(cursor.pos, **display_cursor);
                     } else if cursor.section > 0 {
                         text.sections[cursor.section].value.remove(cursor.pos);
 
                         cursor.section -= 1;
                         if text.sections[cursor.section].value.is_empty() {
-                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                            text.sections[cursor.section].value.push(**display_cursor);
                             cursor.pos = 0;
                         } else {
                             let last = text.sections[cursor.section].value.len() - 1;
-                            text.sections[cursor.section]
-                                .value
-                                .insert_str(last, display_cursor.as_str());
+                            text.sections[cursor.section].value.insert(last, **display_cursor);
                             cursor.pos = last;
                         }
                     }
@@ -375,20 +365,16 @@ fn listen_keyboard_input(
                         text.sections[cursor.section].value.remove(cursor.pos);
 
                         cursor.pos += 1;
-                        text.sections[cursor.section]
-                            .value
-                            .insert_str(cursor.pos, display_cursor.as_str());
+                        text.sections[cursor.section].value.insert(cursor.pos, **display_cursor);
                     } else if cursor.section < text.sections.len() - 1 {
                         text.sections[cursor.section].value.remove(cursor.pos);
 
                         cursor.section += 1;
                         if text.sections[cursor.section].value.is_empty() {
-                            text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                            text.sections[cursor.section].value.push(**display_cursor);
                             cursor.pos = 0;
                         } else {
-                            text.sections[cursor.section]
-                                .value
-                                .insert_str(1, display_cursor.as_str());
+                            text.sections[cursor.section].value.insert(1, **display_cursor);
                             cursor.pos = 1;
                         }
                     }
@@ -398,14 +384,14 @@ fn listen_keyboard_input(
 
                     cursor.section = 0;
                     cursor.pos = 0;
-                    text.sections[0].value.insert_str(0, display_cursor.as_str());
+                    text.sections[0].value.insert(0, **display_cursor);
                 }
                 Key::End => {
                     text.sections[cursor.section].value.remove(cursor.pos);
 
                     cursor.section = text.sections.len() - 1;
                     cursor.pos = text.sections[cursor.section].value.len();
-                    text.sections[cursor.section].value.push_str(display_cursor.as_str());
+                    text.sections[cursor.section].value.push(**display_cursor);
                 }
                 _ => continue,
             }
@@ -427,14 +413,14 @@ fn blink_cursor(
             && text.sections[cursor_pos.section].value.len() > cursor_pos.pos
         {
             let current_cursor = text.sections[cursor_pos.section].value.as_bytes()[cursor_pos.pos] as char;
-            let next_cursor: String = if current_cursor.to_string() != **display_text_cursor {
-                (**display_text_cursor).clone()
+            let next_cursor = if current_cursor != **display_text_cursor {
+                **display_text_cursor
             } else {
-                " ".into()
+                ' '
             };
             text.sections[cursor_pos.section]
                 .value
-                .replace_range(cursor_pos.pos..(cursor_pos.pos + 1), next_cursor.as_str());
+                .replace_range(cursor_pos.pos..(cursor_pos.pos + 1), String::from(next_cursor).as_str());
         }
     }
 }
