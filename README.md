@@ -52,10 +52,7 @@ Insert component `TextEditable` and `Interaction` into any text entity that need
 commands.spawn((
     TextEditable::default(), // Mark text is editable
     Interaction::None,       // Mark entity is interactable
-    TextBundle::from_section(
-        "Input Text 1",
-        TextStyle::default(),
-    ),
+    Text::new("Input Text 1"),
 ));
 ```
 
@@ -63,6 +60,7 @@ Only text that is focused by clicking gets keyboard input.
 
 
 It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
+
 ```rust
 commands.spawn((
     TextEditable {
@@ -70,10 +68,7 @@ commands.spawn((
         filter_out: vec!["5".into()],                // Ignore number 5
     },
     Interaction::None,
-    TextBundle::from_section(
-        "Input Text 1",
-        TextStyle::default(),
-    ),
+    Text::new("Input Text 1"),
 ));
 ```
 
@@ -86,7 +81,8 @@ Please see [LICENSE](./LICENSE).
 Compatible Bevy Versions
 ------------------------
 
-| bevy | bevy_text_edit               |
-|------|------------------------------|
-| 0.14 | 0.1-0.3, branch `master`     |
-| 0.13 | 0.0.1-0.0.5                  |
+| bevy | bevy_text_edit       |
+|------|----------------------|
+| 0.15 | 0.4, branch `master` |
+| 0.14 | 0.1-0.3              |
+| 0.13 | 0.0.1-0.0.5          |

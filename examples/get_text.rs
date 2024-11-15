@@ -1,4 +1,4 @@
-use bevy::{color::palettes::css::DARK_GRAY, prelude::*};
+use bevy::prelude::*;
 
 use bevy_text_edit::{listen_changing_focus, TextEditFocus, TextEditPlugin, TextEditable};
 
@@ -24,49 +24,32 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn(Node {
+            width: Val::Percent(100.),
+            height: Val::Percent(100.),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         })
         .with_children(|parent| {
-            let text_style = TextStyle {
-                font_size: 30.,
-                ..default()
-            };
-
             parent.spawn((
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
                 Interaction::None,       // Mark entity is interactable
-                TextBundle::from_section("Input Text 1", text_style.clone()),
+                Text::new("Input Text 1"),
             ));
 
-            parent.spawn((
-                TextEditable::default(),
-                Interaction::None,
-                TextBundle::from_section("Input Text 2", text_style.clone()),
-            ));
+            parent.spawn((TextEditable::default(), Interaction::None, Text::new("Input Text 2")));
 
-            parent
-                .spawn(ButtonBundle {
-                    background_color: DARK_GRAY.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section("Result".to_string(), text_style.clone()));
-                });
+            parent.spawn(Button).with_children(|parent| {
+                parent.spawn(Text::new("Result"));
+            });
 
-            parent.spawn((Result, TextBundle::from_section("", text_style.clone())));
+            parent.spawn((Result, Text::new("")));
         });
 }
 
@@ -80,11 +63,11 @@ fn get_result(
             let mut result = String::new();
 
             for text in texts.iter() {
-                result = format!("{} {}", result, text.sections[0].value);
+                result = format!("{} {}", result, **text);
             }
 
             if let Ok(mut result_box) = result_box.get_single_mut() {
-                result_box.sections[0].value = result;
+                **result_box = result;
             }
         }
     }

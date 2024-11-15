@@ -1,4 +1,3 @@
-use bevy::color::palettes::basic::{GREEN, LIME, RED, YELLOW};
 use bevy::prelude::*;
 
 use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPlugin};
@@ -20,55 +19,23 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn(Node {
+            width: Val::Percent(100.),
+            height: Val::Percent(100.),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         })
         .with_children(|parent| {
-            let section1 = TextSection {
-                value: "Section1".into(),
-                style: TextStyle {
-                    color: GREEN.into(),
-                    ..default()
-                },
-            };
-            let section2 = TextSection {
-                value: "Section2".into(),
-                style: TextStyle {
-                    color: RED.into(),
-                    ..default()
-                },
-            };
-            let section3 = TextSection {
-                value: "1234".into(),
-                style: TextStyle {
-                    color: LIME.into(),
-                    ..default()
-                },
-            };
-            let section4 = TextSection {
-                value: "5678".into(),
-                style: TextStyle {
-                    color: YELLOW.into(),
-                    ..default()
-                },
-            };
-
             parent.spawn((
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
                 Interaction::None,       // Mark entity is interactable
-                TextBundle::from_sections(vec![section1, section2]),
+                Text::new("Section 1"),
             ));
 
             parent.spawn((
@@ -78,7 +45,7 @@ fn setup(mut commands: Commands) {
                     ..default()
                 },
                 Interaction::None,
-                TextBundle::from_sections(vec![section3, section4]),
+                Text::new("Section 2"),
             ));
         });
 }

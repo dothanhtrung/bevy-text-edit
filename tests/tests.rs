@@ -11,10 +11,8 @@ use bevy_text_edit::TextEditPlugin;
 #[cfg(not(feature = "state"))]
 use bevy_text_edit::TextEditPluginNoState;
 
-const T1_S1: &str = "Text1_Section1";
-const T1_S2: &str = "Text1_Section2";
-const T2_S1: &str = "Text2_Section1";
-const T2_S2: &str = "Text2_Section2";
+const TEXT_1: &str = "Text_Section1";
+const TEXT_2: &str = "Text_Section2";
 
 #[test]
 fn arrow() {
@@ -24,25 +22,13 @@ fn arrow() {
     send_key(app.world_mut(), KeyCode::ArrowLeft, Key::ArrowLeft);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section|2".to_string());
+    assert_eq!(text1.0, "Text_Section|1".to_string());
 
-    // Arrow left to other section
-    for _ in 0..T1_S2.len() {
-        send_key(app.world_mut(), KeyCode::ArrowLeft, Key::ArrowLeft);
-    }
-    app.update();
-    let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section|1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2".to_string());
-
-    // Arrow right to other section
-    send_key(app.world_mut(), KeyCode::ArrowRight, Key::ArrowRight);
+    // 1 Arrow right
     send_key(app.world_mut(), KeyCode::ArrowRight, Key::ArrowRight);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "T|ext1_Section2".to_string());
+    assert_eq!(text1.0, "Text_Section1|".to_string());
 }
 
 #[test]
@@ -53,17 +39,7 @@ fn backspace() {
     send_key(app.world_mut(), KeyCode::Backspace, Key::Backspace);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section|".to_string());
-
-    // Backspace to other section
-    for _ in 0..T1_S2.len() {
-        send_key(app.world_mut(), KeyCode::Backspace, Key::Backspace);
-    }
-    app.update();
-    let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section|".to_string());
-    assert!(text1.sections[1].value.is_empty());
+    assert_eq!(text1.0, "Text_Section|".to_string());
 }
 
 #[test]
@@ -75,8 +51,7 @@ fn input_text() {
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2 a|".to_string());
+    assert_eq!(text1.0, "Text_Section1 a|".to_string());
 }
 
 #[test]
@@ -88,19 +63,13 @@ fn delete() {
     send_key(app.world_mut(), KeyCode::Delete, Key::Delete);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section|".to_string());
+    assert_eq!(text1.0, "Text_Section|".to_string());
 
-    // Delete to other section
-    for _ in 0..T1_S2.len() {
-        send_key(app.world_mut(), KeyCode::ArrowLeft, Key::ArrowLeft);
-    }
-    send_key(app.world_mut(), KeyCode::Delete, Key::Delete);
+    // Delete at the end of line
     send_key(app.world_mut(), KeyCode::Delete, Key::Delete);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section".to_string());
-    assert_eq!(text1.sections[1].value, "|ext1_Section".to_string());
+    assert_eq!(text1.0, "Text_Section|".to_string());
 }
 
 #[test]
@@ -111,27 +80,19 @@ fn home_end() {
     send_key(app.world_mut(), KeyCode::Home, Key::Home);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "|Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2".to_string());
+    assert_eq!(text1.0, "|Text_Section1".to_string());
 
     // Backspace at the beginning
     send_key(app.world_mut(), KeyCode::Backspace, Key::Backspace);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "|Text1_Section1".to_string());
+    assert_eq!(text1.0, "|Text_Section1".to_string());
 
     // End
     send_key(app.world_mut(), KeyCode::End, Key::End);
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2|".to_string());
-
-    // Delete at the end
-    send_key(app.world_mut(), KeyCode::Delete, Key::Delete);
-    app.update();
-    let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[1].value, "Text1_Section2|".to_string());
+    assert_eq!(text1.0, "Text_Section1|".to_string());
 }
 
 #[test]
@@ -146,8 +107,7 @@ fn ignore_char_test() {
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2b4|".to_string());
+    assert_eq!(text1.0, "Text_Section1b4|".to_string());
 }
 
 #[test]
@@ -164,13 +124,12 @@ fn allow_char_test() {
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[0].value, "Text1_Section1".to_string());
-    assert_eq!(text1.sections[1].value, "Text1_Section2 a13|".to_string());
+    assert_eq!(text1.0, "Text_Section1 a13|".to_string());
 }
 
 #[test]
 fn max_length() {
-    let (mut app, text1_e, _) = setup(vec![], vec![], 30);
+    let (mut app, text1_e, _) = setup(vec![], vec![], 15);
 
     send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
     send_key(app.world_mut(), KeyCode::KeyA, Key::Character("a".into()));
@@ -180,7 +139,7 @@ fn max_length() {
 
     app.update();
     let text1 = app.world().get::<Text>(text1_e).unwrap();
-    assert_eq!(text1.sections[1].value, "Text1_Section2aa|".to_string());
+    assert_eq!(text1.0, "Text_Section1aa|".to_string());
 }
 
 #[cfg(feature = "state")]
@@ -208,33 +167,13 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
     #[cfg(not(feature = "state"))]
     app.add_plugins((DefaultPlugins, TextEditPluginNoState));
 
-    let text1_section1 = TextSection {
-        value: T1_S1.into(),
-        ..default()
-    };
-    let text1_section2 = TextSection {
-        value: T1_S2.into(),
-        ..default()
-    };
-    let text2_section1 = TextSection {
-        value: T2_S1.into(),
-        ..default()
-    };
-    let text2_section2 = TextSection {
-        value: T2_S2.into(),
-        ..default()
-    };
-
     app.world_mut()
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn(Node {
+            width: Val::Percent(100.),
+            height: Val::Percent(100.),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         })
         .with_children(|parent| {
@@ -248,16 +187,12 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
                     },
                     TextEditFocus,
                     Interaction::None,
-                    TextBundle::from_sections(vec![text1_section1, text1_section2]),
+                    Text::new(TEXT_1),
                 ))
                 .id();
 
             text2 = parent
-                .spawn((
-                    TextEditable::default(),
-                    Interaction::None,
-                    TextBundle::from_sections(vec![text2_section1, text2_section2]),
-                ))
+                .spawn((TextEditable::default(), Interaction::None, Text::new(TEXT_2)))
                 .id();
         });
 
@@ -273,5 +208,6 @@ fn send_key(world: &mut World, key_code: KeyCode, logical_key: Key) {
         logical_key,
         state: ButtonState::Pressed,
         window,
+        repeat: false,
     });
 }

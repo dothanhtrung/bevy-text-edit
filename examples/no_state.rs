@@ -12,18 +12,15 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera::default());
 
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn(Node {
+            width: Val::Percent(100.),
+            height: Val::Percent(100.),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         })
         .with_children(|parent| {
@@ -31,25 +28,9 @@ fn setup(mut commands: Commands) {
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
                 Interaction::None,       // Mark entity is interactable
-                TextBundle::from_section(
-                    "Input Text 1",
-                    TextStyle {
-                        font_size: 30.,
-                        ..default()
-                    },
-                ),
+                Text::new("Input Text 1"),
             ));
 
-            parent.spawn((
-                TextEditable::default(),
-                Interaction::None,
-                TextBundle::from_section(
-                    "Input Text 2",
-                    TextStyle {
-                        font_size: 30.,
-                        ..default()
-                    },
-                ),
-            ));
+            parent.spawn((TextEditable::default(), Interaction::None, Text::new("Input Text 2")));
         });
 }
