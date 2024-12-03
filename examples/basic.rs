@@ -34,7 +34,6 @@ fn setup(mut commands: Commands) {
             parent.spawn((
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
-                Interaction::None,       // Mark entity is interactable
                 Text::new("Section 1"),
             ));
 
@@ -44,7 +43,6 @@ fn setup(mut commands: Commands) {
                     blink: true,
                     ..default()
                 },
-                Interaction::None,
                 Text::new("Section 2"),
             ));
         });

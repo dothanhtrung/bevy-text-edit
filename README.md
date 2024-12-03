@@ -46,12 +46,11 @@ fn main() {
 
 ### Component
 
-Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable:
+Insert component `TextEditable` into any text entity that needs to be editable:
 
 ```rust
 commands.spawn((
     TextEditable::default(), // Mark text is editable
-    Interaction::None,       // Mark entity is interactable
     Text::new("Input Text 1"),
 ));
 ```
@@ -67,7 +66,6 @@ commands.spawn((
         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
         filter_out: vec!["5".into()],                // Ignore number 5
     },
-    Interaction::None,
     Text::new("Input Text 1"),
 ));
 ```

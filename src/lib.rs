@@ -32,12 +32,11 @@
 //!
 //! ### Component
 //!
-//! Insert component `TextEditable` and `Interaction` into any text entity that needs to be editable:
+//! Insert component `TextEditable` into any text entity that needs to be editable:
 //!
 //! ```rust
 //! commands.spawn((
 //!     TextEditable::default(), // Mark text is editable
-//!     Interaction::None,       // Mark entity is interactable
 //!     Text::new("Input Text 1"),
 //! ));
 //! ```
@@ -53,7 +52,6 @@
 //!         filter_out: vec!["5".into()],                // Ignore number 5
 //!         ..default()
 //!     },
-//!     Interaction::None,
 //!     Text::new("Input Text 1"),
 //! ));
 //! ```
@@ -162,11 +160,11 @@ pub struct TextEditFocus;
 ///         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
 ///         filter_out: vec!["5".into()],                // Ignore number 5
 ///     },
-///     Interaction::None,
 ///     Text::new("Input Text 1"),
 /// ));
 /// ```
 #[derive(Component)]
+#[require(Interaction)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
     pub filter_out: Vec<String>,

@@ -11,20 +11,11 @@ exclude = ["assets", "examples", "tests", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.15.0-rc.3", features = ["bevy_text", "bevy_ui", "bevy_gilrs"], default-features = false }
+bevy = { version = "0.15", features = ["bevy_text", "bevy_ui", "bevy_gilrs"], default-features = false }
 regex-lite = { version = "0.1" }
 
 [dev-dependencies]
-bevy = { version = "0.15.0-rc.3", features = [
-    "bevy_text",
-    "bevy_ui",
-    "bevy_gilrs",
-    "dynamic_linking",
-    "bevy_color",
-    "bevy_winit",
-    "wayland",
-    "default_font",
-], default-features = false }
+bevy = { version = "0.15" }
 
 [features]
 default = ["state"]
