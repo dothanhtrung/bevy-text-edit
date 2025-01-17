@@ -57,14 +57,14 @@
 //! ```
 
 use bevy::app::{App, Plugin, Update};
-use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
-use bevy::prelude::{
-    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EventReader, IntoSystemConfigs, MouseButton,
-    Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, With, Without,
-};
+use bevy::input::ButtonState;
 #[cfg(feature = "state")]
 use bevy::prelude::{in_state, States};
+use bevy::prelude::{
+    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
+    IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, With, Without,
+};
 use bevy::ui::Interaction;
 use regex_lite::Regex;
 
@@ -115,7 +115,8 @@ where
 {
     fn build(&self, app: &mut App) {
         app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
-            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)));
+            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
+            .add_event::<TextEdited>();
         if let Some(states) = &self.states {
             for state in states {
                 app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
@@ -144,6 +145,7 @@ impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
         app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
+            .add_event::<TextEdited>()
             .add_systems(Update, plugin_systems!());
     }
 }
@@ -190,10 +192,17 @@ impl Default for TextEditable {
     }
 }
 
+#[derive(Event)]
+pub struct TextEdited {
+    pub text: String,
+    pub entity: Entity,
+}
+
 fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
     ignore_entity: Option<Entity>,
+    event: &mut EventWriter<TextEdited>,
 ) {
     for (e, cursor, mut text) in text_focus.iter_mut() {
         if ignore_entity.is_none() || e != ignore_entity.unwrap() {
@@ -204,6 +213,11 @@ fn unfocus_text_box(
             }
             commands.entity(e).remove::<CursorPosition>();
             commands.entity(e).remove::<TextEditFocus>();
+
+            event.send(TextEdited {
+                text: text.0.clone(),
+                entity: e,
+            });
         }
     }
 }
@@ -228,6 +242,7 @@ pub fn listen_changing_focus(
     mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
     other_interactions: Query<&Interaction, (Changed<Interaction>, Without<TextEditable>)>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    mut event: EventWriter<TextEdited>,
 ) {
     let mut clicked_elsewhere = input.just_pressed(MouseButton::Left);
     for oth_itr in other_interactions.iter() {
@@ -236,7 +251,7 @@ pub fn listen_changing_focus(
         }
     }
     if text_interactions.is_empty() && clicked_elsewhere {
-        unfocus_text_box(&mut commands, &mut focusing_texts, None);
+        unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut event);
         return;
     }
 
@@ -247,7 +262,7 @@ pub fn listen_changing_focus(
                 focusing_list.push(focusing_e);
             }
 
-            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e));
+            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e), &mut event);
             if !focusing_list.contains(&e) {
                 commands.entity(e).insert(TextEditFocus);
             }
