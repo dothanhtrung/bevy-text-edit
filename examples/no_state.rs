@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPluginNoState};
+use bevy_text_edit::{TextEditFocus, TextEditPluginNoState, TextEditable};
 
 fn main() {
     App::new()
@@ -29,8 +29,22 @@ fn setup(mut commands: Commands) {
                 TextEditFocus,           // Mark text is focused
                 Interaction::None,       // Mark entity is interactable
                 Text::new("Input Text 1"),
+                Node {
+                    height: Val::Px(64.),
+                    width: Val::Percent(80.),
+                    ..default()
+                },
             ));
 
-            parent.spawn((TextEditable::default(), Interaction::None, Text::new("Input Text 2")));
+            parent.spawn((
+                TextEditable::default(),
+                Interaction::None,
+                Text::new("Input Text 2"),
+                Node {
+                    height: Val::Px(64.),
+                    width: Val::Percent(80.),
+                    ..default()
+                },
+            ));
         });
 }

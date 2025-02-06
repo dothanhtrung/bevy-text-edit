@@ -1,4 +1,4 @@
-// Copyright 2024 Trung Do <dothanhtrung@pm.me>
+// Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
 
 //! ### Plugin
 //!
@@ -62,9 +62,10 @@ use bevy::input::ButtonState;
 #[cfg(feature = "state")]
 use bevy::prelude::{in_state, States};
 use bevy::prelude::{
-    ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
+    Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
     IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, With, Without,
 };
+use bevy::text::TextColor;
 use bevy::ui::Interaction;
 use regex_lite::Regex;
 
@@ -75,6 +76,7 @@ macro_rules! plugin_systems {
             focus_text_box,
             listen_keyboard_input,
             blink_cursor,
+            display_placeholder,
         )
             .chain()
     };
@@ -179,6 +181,11 @@ pub struct TextEditable {
 
     /// Blink the text cursor.
     pub blink: bool,
+
+    /// Text placeholder. Display when text box is empty.
+    pub placeholder: String,
+    pub is_placeholder_shown: bool,
+    pub orig_text_alpha: f32,
 }
 
 impl Default for TextEditable {
@@ -188,6 +195,9 @@ impl Default for TextEditable {
             filter_in: Default::default(),
             max_length: 254,
             blink: false,
+            placeholder: String::new(),
+            is_placeholder_shown: false,
+            orig_text_alpha: 1.0,
         }
     }
 }
@@ -200,11 +210,11 @@ pub struct TextEdited {
 
 fn unfocus_text_box(
     commands: &mut Commands,
-    text_focus: &mut Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    text_focus: &mut Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     ignore_entity: Option<Entity>,
     event: &mut EventWriter<TextEdited>,
 ) {
-    for (e, cursor, mut text) in text_focus.iter_mut() {
+    for (e, cursor, mut text, text_editable) in text_focus.iter_mut() {
         if ignore_entity.is_none() || e != ignore_entity.unwrap() {
             commands.entity(e).remove::<TextEditFocus>();
 
@@ -214,8 +224,13 @@ fn unfocus_text_box(
             commands.entity(e).remove::<CursorPosition>();
             commands.entity(e).remove::<TextEditFocus>();
 
+            let edited_text = if text_editable.is_placeholder_shown {
+                String::new()
+            } else {
+                text.0.clone()
+            };
             event.send(TextEdited {
-                text: text.0.clone(),
+                text: edited_text,
                 entity: e,
             });
         }
@@ -224,15 +239,22 @@ fn unfocus_text_box(
 
 fn focus_text_box(
     mut commands: Commands,
-    mut focused_texts: Query<(&mut Text, Entity), (With<TextEditFocus>, Without<CursorPosition>)>,
+    mut focused_texts: Query<
+        (&mut Text, &mut TextColor, &mut TextEditable, Entity),
+        (With<TextEditFocus>, Without<CursorPosition>),
+    >,
     display_cursor: Res<DisplayTextCursor>,
 ) {
-    for (mut text, e) in focused_texts.iter_mut() {
-        if !text.is_empty() {
-            let pos = text.len();
-            commands.entity(e).insert(CursorPosition { pos });
-            text.push(**display_cursor);
+    for (mut text, mut text_color, mut text_editable, e) in focused_texts.iter_mut() {
+        if text_editable.is_placeholder_shown {
+            **text = String::new();
+            text_editable.is_placeholder_shown = false;
+            text_color.set_alpha(text_editable.orig_text_alpha);
         }
+
+        let pos = text.len();
+        commands.entity(e).insert(CursorPosition { pos });
+        text.push(**display_cursor);
     }
 }
 
@@ -241,7 +263,7 @@ pub fn listen_changing_focus(
     input: Res<ButtonInput<MouseButton>>,
     mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
     other_interactions: Query<&Interaction, (Changed<Interaction>, Without<TextEditable>)>,
-    mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text), With<TextEditFocus>>,
+    mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     mut event: EventWriter<TextEdited>,
 ) {
     let mut clicked_elsewhere = input.just_pressed(MouseButton::Left);
@@ -258,7 +280,7 @@ pub fn listen_changing_focus(
     for (interaction, e) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
             let mut focusing_list = Vec::new();
-            for (focusing_e, _, _) in focusing_texts.iter() {
+            for (focusing_e, _, _, _) in focusing_texts.iter() {
                 focusing_list.push(focusing_e);
             }
 
@@ -364,6 +386,17 @@ fn blink_cursor(
                 ' '
             };
             text.replace_range(cursor_pos.pos..(cursor_pos.pos + 1), String::from(next_cursor).as_str());
+        }
+    }
+}
+
+fn display_placeholder(mut query: Query<(&mut Text, &mut TextColor, &mut TextEditable), Without<TextEditFocus>>) {
+    for (mut text, mut text_color, mut text_editable) in query.iter_mut() {
+        if text.is_empty() && !text_editable.is_placeholder_shown && !text_editable.placeholder.is_empty() {
+            **text = text_editable.placeholder.clone();
+            text_editable.is_placeholder_shown = true;
+            text_editable.orig_text_alpha = text_color.alpha();
+            text_color.set_alpha(0.5);
         }
     }
 }

@@ -1,6 +1,7 @@
+use bevy::color::palettes::tailwind::ZINC_800;
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditable, TextEditFocus, TextEditPlugin};
+use bevy_text_edit::{TextEditFocus, TextEditPlugin, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -10,7 +11,7 @@ enum GameState {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin need to be added before init_state
+        .add_plugins(DefaultPlugins) // Since bevy 0.14, default plugin need to be added before init_state
         .init_state::<GameState>()
         // Add the plugin
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
@@ -35,15 +36,28 @@ fn setup(mut commands: Commands) {
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
                 Text::new("Section 1"),
+                Node {
+                    height: Val::Px(64.),
+                    width: Val::Percent(80.),
+                    ..default()
+                },
+                BackgroundColor::from(ZINC_800),
             ));
 
             parent.spawn((
                 TextEditable {
                     filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
                     blink: true,
+                    placeholder: String::from("Section 2"),
                     ..default()
                 },
-                Text::new("Section 2"),
+                Text::new(""),
+                Node {
+                    height: Val::Px(64.),
+                    width: Val::Percent(80.),
+                    ..default()
+                },
+                BackgroundColor::from(ZINC_800),
             ));
         });
 }
