@@ -58,7 +58,8 @@ commands.spawn((
 Only text that is focused by clicking gets keyboard input.
 
 
-It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
+It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute
+(regex is supported):
 
 ```rust
 commands.spawn((
@@ -68,6 +69,19 @@ commands.spawn((
     },
     Text::new("Input Text 1"),
 ));
+```
+
+### Get text
+
+The edited text can be retrieved from event `TextEdited`.
+```rust
+fn get_text(
+    mut event: EventReader<TextEdited>,
+) {
+    for e in event.read() {
+        info!("Entity {}: {}", e.entity, e.text);
+    }
+}
 ```
 
 License

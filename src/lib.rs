@@ -5,6 +5,9 @@
 //! Add plugin `TextEditPlugin` to the app and define which states it will run in:
 //!
 //! ```rust
+//! use bevy::prelude::*;
+//! use bevy_text_edit::TextEditPlugin;
+//!
 //! #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 //! enum GameState {
 //!     #[default]
@@ -16,17 +19,19 @@
 //!         .add_plugins(DefaultPlugins)
 //!         // Add the plugin
 //!         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
-//!         .run;
+//!         .run();
 //! }
 //! ```
 //!
 //! If you don't care to game state and want to always run input text, use `TextEditPluginNoState`:
 //! ```rust
+//! use bevy::prelude::*;
+//! use bevy_text_edit::TextEditPluginNoState;
+//!
 //! App::new()
 //!     .add_plugins(DefaultPlugins)
 //!     // Add the plugin
 //!     .add_plugins(TextEditPluginNoState)
-//!     .add_systems(Startup, setup)
 //!     .run();
 //! ```
 //!
@@ -35,25 +40,51 @@
 //! Insert component `TextEditable` into any text entity that needs to be editable:
 //!
 //! ```rust
-//! commands.spawn((
-//!     TextEditable::default(), // Mark text is editable
-//!     Text::new("Input Text 1"),
-//! ));
+//! use bevy::prelude::*;
+//! use bevy_text_edit::TextEditable;
+//!
+//! fn setup(mut commands: Commands) {
+//!     commands.spawn((
+//!         TextEditable::default(), // Mark text is editable
+//!         Text::new("Input Text 1"),
+//!     ));
+//! }
 //! ```
 //!
 //! Only text that is focused by clicking gets keyboard input.
 //!
 //!
-//! It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
+//! It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute (regex is supported):
 //! ```rust
-//! commands.spawn((
-//!     TextEditable {
-//!         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-//!         filter_out: vec!["5".into()],                // Ignore number 5
-//!         ..default()
-//!     },
-//!     Text::new("Input Text 1"),
-//! ));
+//! use bevy::prelude::*;
+//! use bevy_text_edit::TextEditable;
+//!
+//! fn setup(mut commands: Commands) {
+//!     commands.spawn((
+//!         TextEditable {
+//!             filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+//!             filter_out: vec!["5".into()],                // Ignore number 5
+//!             ..default()
+//!         },
+//!         Text::new("Input Text 1"),
+//!     ));
+//! }
+//! ```
+//!
+//! ### Get text
+//!
+//! The edited text can be retrieved from event `TextEdited`.
+//! ```rust
+//! use bevy::prelude::*;
+//! use bevy_text_edit::TextEdited;
+//!
+//! fn get_text(
+//!     mut event: EventReader<TextEdited>,
+//! ) {
+//!     for e in event.read() {
+//!         info!("Entity {}: {}", e.entity, e.text);
+//!     }
+//! }
 //! ```
 
 use bevy::app::{App, Plugin, Update};
@@ -159,13 +190,19 @@ pub struct TextEditFocus;
 /// Mark a text is editable.  
 /// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
 /// ```rust
-/// commands.spawn((
-///     TextEditable {
-///         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-///         filter_out: vec!["5".into()],                // Ignore number 5
-///     },
-///     Text::new("Input Text 1"),
-/// ));
+/// use bevy::prelude::*;
+/// use bevy_text_edit::TextEditable;
+///
+/// fn setup(mut commands: Commands) {
+///     commands.spawn((
+///         TextEditable {
+///             filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+///             filter_out: vec!["5".into()],                // Ignore number 5
+///             ..default()
+///         },
+///         Text::new("Input Text 1"),
+///     ));
+/// }
 /// ```
 #[derive(Component)]
 #[require(Interaction)]
