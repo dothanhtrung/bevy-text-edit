@@ -6,7 +6,7 @@ bevy_text_edit
 [![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit)
 [![pipeline status](https://gitlab.com/kimtinh/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-text-edit/-/commits/master)
 
-![](examples/text_edit.mp4)
+![](examples/text_edit.gif)
 
 Quickstart
 ----------
