@@ -1,3 +1,5 @@
+<div align="center">
+
 bevy_text_edit
 ==============
 
@@ -6,7 +8,12 @@ bevy_text_edit
 [![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit)
 [![pipeline status](https://gitlab.com/kimtinh/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-text-edit/-/commits/master)
 
+[![Gitlab](https://img.shields.io/badge/gitlab-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/kimtinh/bevy-text-edit)
+[![Github](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dothanhtrung/bevy-text-edit)
+
 ![](examples/text_edit.gif)
+
+</div>
 
 Quickstart
 ----------
@@ -66,6 +73,7 @@ commands.spawn((
     TextEditable {
         filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
         filter_out: vec!["5".into()],                // Ignore number 5
+        ..default()
     },
     Text::new("Input Text 1"),
 ));

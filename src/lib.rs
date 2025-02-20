@@ -170,7 +170,7 @@ where
     }
 }
 
-/// Use this if you don't care to state and want this plugin's systems run always.
+/// Use this if you don't care to state and want this plugin's systems always run.
 #[derive(Default)]
 pub struct TextEditPluginNoState;
 
@@ -188,7 +188,7 @@ impl Plugin for TextEditPluginNoState {
 pub struct TextEditFocus;
 
 /// Mark a text is editable.  
-/// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute. Regex is supported:
+/// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute (regex is supported):
 /// ```rust
 /// use bevy::prelude::*;
 /// use bevy_text_edit::TextEditable;
