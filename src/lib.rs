@@ -239,7 +239,7 @@ impl Default for TextEditable {
     }
 }
 
-#[derive(Event)]
+#[derive(Event, Clone)]
 pub struct TextEdited {
     pub text: String,
     pub entity: Entity,
@@ -266,10 +266,13 @@ fn unfocus_text_box(
             } else {
                 text.0.clone()
             };
-            event.send(TextEdited {
+
+            let text_edited = TextEdited {
                 text: edited_text,
                 entity: e,
-            });
+            };
+            event.send(text_edited.clone());
+            commands.trigger_targets(text_edited, e);
         }
     }
 }

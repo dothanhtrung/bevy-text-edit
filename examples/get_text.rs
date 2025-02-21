@@ -18,7 +18,6 @@ fn main() {
         // Add the plugin
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
         .add_systems(Startup, setup)
-        .add_systems(Update, get_result)
         .run();
 }
 
@@ -35,40 +34,45 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            parent.spawn((
-                TextEditable::default(), // Mark text is editable
-                TextEditFocus,           // Mark text is focused
-                Interaction::None,       // Mark entity is interactable
-                Text::new("Input Text 1"),
-                Node {
-                    height: Val::Px(64.),
-                    width: Val::Percent(80.),
-                    ..default()
-                },
-            ));
+            parent
+                .spawn((
+                    TextEditable::default(), // Mark text is editable
+                    TextEditFocus,           // Mark text is focused
+                    Interaction::None,       // Mark entity is interactable
+                    Text::new("Input Text 1"),
+                    Node {
+                        height: Val::Px(64.),
+                        width: Val::Percent(80.),
+                        ..default()
+                    },
+                ))
+                .observe(get_result);
 
-            parent.spawn((
-                TextEditable::default(),
-                Interaction::None,
-                Text::new("Input Text 2"),
-                Node {
-                    height: Val::Px(64.),
-                    width: Val::Percent(80.),
-                    ..default()
-                },
-            ));
+            parent
+                .spawn((
+                    TextEditable::default(),
+                    Interaction::None,
+                    Text::new("Input Text 2"),
+                    Node {
+                        height: Val::Px(64.),
+                        width: Val::Percent(80.),
+                        ..default()
+                    },
+                ))
+                .observe(get_result);
 
             parent.spawn((Result, Text::new("")));
         });
 }
 
 fn get_result(
+    trigger: Trigger<TextEdited>,
     mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>,
-    mut event: EventReader<TextEdited>,
+    // mut event: EventReader<TextEdited>,
 ) {
-    for e in event.read() {
-        if let Ok(mut result_box) = result_box.get_single_mut() {
-            **result_box = format!("Entity {}: {}", e.entity, e.text);
-        }
+    let e = trigger.entity();
+    let text = trigger.text.as_str();
+    if let Ok(mut result_box) = result_box.get_single_mut() {
+        **result_box = format!("Entity {}: {}", e, text);
     }
 }
