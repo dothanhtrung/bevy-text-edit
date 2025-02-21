@@ -1,6 +1,6 @@
 [package]
 name = "bevy_text_edit"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"

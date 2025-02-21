@@ -15,6 +15,20 @@ bevy_text_edit
 
 </div>
 
+A very easy to use plugin for input text in Bevy. Good enough for game setting and command console.
+
+Features:
+* [x] Switchable between multiple text boxes.
+* [x] Moving text cursor using arrow keys and Home/End.
+* [x] Limit input length.
+* [x] Filter input text with regex.
+* [x] Placeholder.
+
+Missing:
+* [ ] IME support.
+* [ ] Select text.
+* [ ] Copy/paste.
+
 Quickstart
 ----------
 
@@ -56,32 +70,36 @@ fn main() {
 Insert component `TextEditable` into any text entity that needs to be editable:
 
 ```rust
-commands.spawn((
-    TextEditable::default(), // Mark text is editable
-    Text::new("Input Text 1"),
-));
+fn setup(mut commands: Commands) {
+    commands.spawn((
+        TextEditable::default(), // Mark text is editable
+        Text::new("Input Text 1"),
+    ));
+}
 ```
 
 Only text that is focused by clicking gets keyboard input.
-
 
 It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute
 (regex is supported):
 
 ```rust
-commands.spawn((
-    TextEditable {
-        filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-        filter_out: vec!["5".into()],                // Ignore number 5
-        ..default()
-    },
-    Text::new("Input Text 1"),
-));
+fn setup(mut commands: Commands) {
+    commands.spawn((
+        TextEditable {
+            filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
+            filter_out: vec!["5".into()],                // Ignore number 5
+            ..default()
+        },
+        Text::new("Input Text 1"),
+    ));
+}
 ```
 
 ### Get text
 
-The edited text can be retrieved from event `TextEdited`.
+The edited text can be retrieved from event or observe trigger `TextEdited`.
+
 ```rust
 fn get_text(
     mut event: EventReader<TextEdited>,
@@ -90,6 +108,23 @@ fn get_text(
         info!("Entity {}: {}", e.entity, e.text);
     }
 }
+```
+
+```rust
+fn setup(mut commands: Commands) {
+    commands.spawn((
+        TextEditable::default(),
+        Text::new("Input Text"),
+    )).observe(get_text);
+}
+
+fn get_text(
+    trigger: Trigger<TextEdited>,
+) {
+    let text = trigger.text.as_str();
+    info!("{}", text);
+}
+
 ```
 
 License

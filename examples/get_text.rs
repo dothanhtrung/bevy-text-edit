@@ -50,7 +50,11 @@ fn setup(mut commands: Commands) {
 
             parent
                 .spawn((
-                    TextEditable::default(),
+                    TextEditable{
+                        placeholder: String::from("Input your text here"),
+                        blink: true,
+                        ..default()
+                    },
                     Interaction::None,
                     Text::new("Input Text 2"),
                     Node {

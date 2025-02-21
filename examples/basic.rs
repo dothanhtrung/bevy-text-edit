@@ -49,6 +49,7 @@ fn setup(mut commands: Commands) {
                     filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
                     blink: true,
                     placeholder: String::from("Section 2"),
+                    max_length: 255,
                     ..default()
                 },
                 Text::new(""),

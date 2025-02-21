@@ -1,9 +1,9 @@
-use bevy::input::{ButtonState, InputPlugin};
 use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::input::{ButtonState, InputPlugin};
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy::time::TimePlugin;
-use bevy_text_edit::{TextEditable, TextEditFocus};
+use bevy_text_edit::{TextEditFocus, TextEditable, TextEdited};
 
 #[cfg(feature = "state")]
 use bevy_text_edit::TextEditPlugin;
@@ -165,7 +165,12 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
     .init_state::<GameState>();
 
     #[cfg(not(feature = "state"))]
-    app.add_plugins((DefaultPlugins, TextEditPluginNoState));
+    app.add_plugins((
+        WindowPlugin::default(),
+        InputPlugin,
+        TimePlugin,
+        TextEditPluginNoState,
+    ));
 
     app.world_mut()
         .spawn(Node {
@@ -183,12 +188,13 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
                         filter_out: ignore,
                         filter_in: allow,
                         max_length,
+                        placeholder: String::from("Placeholder"),
                         ..default()
                     },
                     TextEditFocus,
                     Interaction::None,
                     Text::new(TEXT_1),
-                ))
+                )).observe(get_text)
                 .id();
 
             text2 = parent
@@ -197,6 +203,10 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
         });
 
     (app, text1, text2)
+}
+
+fn get_text(trigger: Trigger<TextEdited>) {
+    info!("{}", trigger.text);
 }
 
 fn send_key(world: &mut World, key_code: KeyCode, logical_key: Key) {
