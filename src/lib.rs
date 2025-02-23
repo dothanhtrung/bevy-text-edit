@@ -205,7 +205,7 @@ pub struct TextEditFocus;
 /// }
 /// ```
 #[derive(Component)]
-#[require(Interaction)]
+#[require(Interaction, Text)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
     pub filter_out: Vec<String>,
