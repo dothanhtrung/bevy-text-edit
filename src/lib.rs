@@ -221,6 +221,7 @@ pub struct TextEditable {
 
     /// Text placeholder. Display when text box is empty.
     pub placeholder: String,
+    pub placeholder_alpha: f32,
     pub is_placeholder_shown: bool,
     pub orig_text_alpha: f32,
 }
@@ -233,6 +234,7 @@ impl Default for TextEditable {
             max_length: 254,
             blink: false,
             placeholder: String::new(),
+            placeholder_alpha: 0.2,
             is_placeholder_shown: false,
             orig_text_alpha: 1.0,
         }
@@ -436,7 +438,7 @@ fn display_placeholder(mut query: Query<(&mut Text, &mut TextColor, &mut TextEdi
             **text = text_editable.placeholder.clone();
             text_editable.is_placeholder_shown = true;
             text_editable.orig_text_alpha = text_color.alpha();
-            text_color.set_alpha(0.5);
+            text_color.set_alpha(text_editable.placeholder_alpha);
         }
     }
 }
