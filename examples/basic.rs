@@ -39,6 +39,7 @@ fn setup(mut commands: Commands) {
                 Node {
                     height: Val::Px(64.),
                     width: Val::Percent(80.),
+                    margin: UiRect::bottom(Val::Px(10.)),
                     ..default()
                 },
                 BackgroundColor::from(ZINC_800),
@@ -52,7 +53,6 @@ fn setup(mut commands: Commands) {
                     max_length: 255,
                     ..default()
                 },
-                Text::new(""),
                 Node {
                     height: Val::Px(64.),
                     width: Val::Percent(80.),

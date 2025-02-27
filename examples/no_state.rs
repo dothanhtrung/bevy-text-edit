@@ -1,3 +1,4 @@
+use bevy::color::palettes::tailwind::ZINC_800;
 use bevy::prelude::*;
 
 use bevy_text_edit::{TextEditFocus, TextEditPluginNoState, TextEditable};
@@ -27,24 +28,25 @@ fn setup(mut commands: Commands) {
             parent.spawn((
                 TextEditable::default(), // Mark text is editable
                 TextEditFocus,           // Mark text is focused
-                Interaction::None,       // Mark entity is interactable
                 Text::new("Input Text 1"),
                 Node {
                     height: Val::Px(64.),
                     width: Val::Percent(80.),
+                    margin: UiRect::bottom(Val::Px(10.)),
                     ..default()
                 },
+                BackgroundColor::from(ZINC_800),
             ));
 
             parent.spawn((
                 TextEditable::default(),
-                Interaction::None,
                 Text::new("Input Text 2"),
                 Node {
                     height: Val::Px(64.),
                     width: Val::Percent(80.),
                     ..default()
                 },
+                BackgroundColor::from(ZINC_800),
             ));
         });
 }

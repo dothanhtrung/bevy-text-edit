@@ -192,7 +192,6 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
                         ..default()
                     },
                     TextEditFocus,
-                    Interaction::None,
                     Text::new(TEXT_1),
                 )).observe(get_text)
                 .id();

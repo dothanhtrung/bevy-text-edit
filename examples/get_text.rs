@@ -1,3 +1,4 @@
+use bevy::color::palettes::tailwind::ZINC_800;
 use bevy::prelude::*;
 
 use bevy_text_edit::{TextEditFocus, TextEditPlugin, TextEditable, TextEdited};
@@ -36,32 +37,35 @@ fn setup(mut commands: Commands) {
         .with_children(|parent| {
             parent
                 .spawn((
-                    TextEditable::default(), // Mark text is editable
-                    TextEditFocus,           // Mark text is focused
-                    Interaction::None,       // Mark entity is interactable
-                    Text::new("Input Text 1"),
+                    TextEditable {
+                        // Mark text is editable
+                        placeholder: String::from("Input your text here"),
+                        ..default()
+                    },
+                    TextEditFocus, // Mark text is focused
                     Node {
                         height: Val::Px(64.),
                         width: Val::Percent(80.),
+                        margin: UiRect::bottom(Val::Px(10.)),
                         ..default()
                     },
+                    BackgroundColor::from(ZINC_800),
                 ))
                 .observe(get_result);
 
             parent
                 .spawn((
-                    TextEditable{
+                    TextEditable {
                         placeholder: String::from("Input your text here"),
                         blink: true,
                         ..default()
                     },
-                    Interaction::None,
-                    Text::new("Input Text 2"),
                     Node {
                         height: Val::Px(64.),
                         width: Val::Percent(80.),
                         ..default()
                     },
+                    BackgroundColor::from(ZINC_800),
                 ))
                 .observe(get_result);
 
@@ -69,11 +73,7 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn get_result(
-    trigger: Trigger<TextEdited>,
-    mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>,
-    // mut event: EventReader<TextEdited>,
-) {
+fn get_result(trigger: Trigger<TextEdited>, mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>) {
     let e = trigger.entity();
     let text = trigger.text.as_str();
     if let Ok(mut result_box) = result_box.get_single_mut() {
