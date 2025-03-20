@@ -165,12 +165,7 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
     .init_state::<GameState>();
 
     #[cfg(not(feature = "state"))]
-    app.add_plugins((
-        WindowPlugin::default(),
-        InputPlugin,
-        TimePlugin,
-        TextEditPluginNoState,
-    ));
+    app.add_plugins((WindowPlugin::default(), InputPlugin, TimePlugin, TextEditPluginNoState));
 
     app.world_mut()
         .spawn(Node {
@@ -193,7 +188,8 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
                     },
                     TextEditFocus,
                     Text::new(TEXT_1),
-                )).observe(get_text)
+                ))
+                .observe(get_text)
                 .id();
 
             text2 = parent

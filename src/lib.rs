@@ -87,6 +87,9 @@
 //! }
 //! ```
 
+pub mod virtual_keyboard;
+
+use crate::virtual_keyboard::{ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
@@ -147,9 +150,12 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
+        app.add_plugins(VirtualKeyboardPlugin)
+            .insert_resource(TextEditConfig::new())
+            .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
             .add_event::<TextEdited>();
+
         if let Some(states) = &self.states {
             for state in states {
                 app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
@@ -176,7 +182,9 @@ pub struct TextEditPluginNoState;
 
 impl Plugin for TextEditPluginNoState {
     fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
+        app.add_plugins(VirtualKeyboardPlugin)
+            .insert_resource(TextEditConfig::new())
+            .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
             .add_event::<TextEdited>()
             .add_systems(Update, plugin_systems!());
@@ -216,12 +224,8 @@ pub struct TextEditable {
     /// Maximum text length. Default is 254. 0 means unlimited.
     pub max_length: usize,
 
-    /// Blink the text cursor.
-    pub blink: bool,
-
     /// Text placeholder. Display when text box is empty.
     pub placeholder: String,
-    pub placeholder_alpha: f32,
     pub is_placeholder_shown: bool,
     pub orig_text_alpha: f32,
 }
@@ -232,9 +236,7 @@ impl Default for TextEditable {
             filter_out: Default::default(),
             filter_in: Default::default(),
             max_length: 254,
-            blink: false,
             placeholder: String::new(),
-            placeholder_alpha: 0.2,
             is_placeholder_shown: false,
             orig_text_alpha: 1.0,
         }
@@ -245,6 +247,25 @@ impl Default for TextEditable {
 pub struct TextEdited {
     pub text: String,
     pub entity: Entity,
+}
+
+#[derive(Resource, Default)]
+pub struct TextEditConfig {
+    pub enable_virtual_keyboard: bool,
+
+    /// Blink the text cursor.
+    pub blink: bool,
+
+    pub placeholder_alpha: f32,
+}
+
+impl TextEditConfig {
+    pub fn new() -> Self {
+        Self {
+            placeholder_alpha: 0.2,
+            ..Self::default()
+        }
+    }
 }
 
 fn unfocus_text_box(
@@ -304,29 +325,46 @@ pub fn listen_changing_focus(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
     mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
-    other_interactions: Query<&Interaction, (Changed<Interaction>, Without<TextEditable>)>,
+    virtual_key_interaction: Query<&Interaction, (Changed<Interaction>, With<VirtualKey>, Without<TextEditable>)>,
+    virtual_keyboard_interaction: Query<
+        &Interaction,
+        (
+            Changed<Interaction>,
+            With<VirtualKeyboard>,
+            Without<VirtualKey>,
+            Without<TextEditable>,
+        ),
+    >,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
-    mut event: EventWriter<TextEdited>,
+    mut text_edited_event: EventWriter<TextEdited>,
+    mut show_virtual_kb_event: EventWriter<ShowVirtualKeyboard>,
+    config: Res<TextEditConfig>,
 ) {
-    let mut clicked_elsewhere = input.just_pressed(MouseButton::Left);
-    for oth_itr in other_interactions.iter() {
-        if *oth_itr == Interaction::Pressed {
-            clicked_elsewhere = true;
-        }
-    }
-    if text_interactions.is_empty() && clicked_elsewhere {
-        unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut event);
+    let clicked_elsewhere = input.just_pressed(MouseButton::Left);
+    if text_interactions.is_empty()
+        && virtual_key_interaction.is_empty()
+        && virtual_keyboard_interaction.is_empty()
+        && clicked_elsewhere
+    {
+        unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
+        show_virtual_kb_event.send(ShowVirtualKeyboard(false));
         return;
     }
 
     for (interaction, e) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
+            if config.enable_virtual_keyboard {
+                show_virtual_kb_event.send(ShowVirtualKeyboard(true));
+            }
+
             let mut focusing_list = Vec::new();
             for (focusing_e, _, _, _) in focusing_texts.iter() {
                 focusing_list.push(focusing_e);
             }
 
-            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e), &mut event);
+            // Unfocus all text box except which is currently clicked on
+            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e), &mut text_edited_event);
+
             if !focusing_list.contains(&e) {
                 commands.entity(e).insert(TextEditFocus);
             }
@@ -340,7 +378,7 @@ fn listen_keyboard_input(
     display_cursor: Res<DisplayTextCursor>,
 ) {
     for event in events.read() {
-        // Only trigger changes when the key is first pressed.
+        // Only trigger changes at the first time the key is pressed.
         if event.state == ButtonState::Released {
             continue;
         }
@@ -416,11 +454,12 @@ fn blink_cursor(
     time: Res<Time>,
     mut blink_interval: ResMut<BlinkInterval>,
     display_text_cursor: Res<DisplayTextCursor>,
-    mut query: Query<(&mut Text, &CursorPosition, &TextEditable), With<TextEditFocus>>,
+    mut query: Query<(&mut Text, &CursorPosition), (With<TextEditFocus>, With<TextEditable>)>,
+    config: Res<TextEditConfig>,
 ) {
     blink_interval.tick(time.delta());
-    for (mut text, cursor_pos, text_editable) in query.iter_mut() {
-        if text_editable.blink && blink_interval.just_finished() && text.len() > cursor_pos.pos {
+    for (mut text, cursor_pos) in query.iter_mut() {
+        if config.blink && blink_interval.just_finished() && text.len() > cursor_pos.pos {
             let current_cursor = text.as_bytes()[cursor_pos.pos] as char;
             let next_cursor = if current_cursor != **display_text_cursor {
                 **display_text_cursor
@@ -432,13 +471,16 @@ fn blink_cursor(
     }
 }
 
-fn display_placeholder(mut query: Query<(&mut Text, &mut TextColor, &mut TextEditable), Without<TextEditFocus>>) {
+fn display_placeholder(
+    mut query: Query<(&mut Text, &mut TextColor, &mut TextEditable), Without<TextEditFocus>>,
+    config: Res<TextEditConfig>,
+) {
     for (mut text, mut text_color, mut text_editable) in query.iter_mut() {
         if text.is_empty() && !text_editable.is_placeholder_shown && !text_editable.placeholder.is_empty() {
             **text = text_editable.placeholder.clone();
             text_editable.is_placeholder_shown = true;
             text_editable.orig_text_alpha = text_color.alpha();
-            text_color.set_alpha(text_editable.placeholder_alpha);
+            text_color.set_alpha(config.placeholder_alpha);
         }
     }
 }

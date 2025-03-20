@@ -1,7 +1,7 @@
 use bevy::color::palettes::tailwind::ZINC_800;
 use bevy::prelude::*;
 
-use bevy_text_edit::{TextEditFocus, TextEditPlugin, TextEditable};
+use bevy_text_edit::{TextEditConfig, TextEditFocus, TextEditPlugin, TextEditable};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {
@@ -19,9 +19,10 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut config: ResMut<TextEditConfig>) {
     commands.spawn(Camera2d::default());
 
+    config.enable_virtual_keyboard = true;
     commands
         .spawn(Node {
             width: Val::Percent(100.),
@@ -48,7 +49,6 @@ fn setup(mut commands: Commands) {
             parent.spawn((
                 TextEditable {
                     filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-                    blink: true,
                     placeholder: String::from("Section 2"),
                     max_length: 255,
                     ..default()
