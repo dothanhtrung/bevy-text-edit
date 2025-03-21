@@ -87,6 +87,8 @@
 //! }
 //! ```
 
+#[cfg(feature = "experimental")]
+pub mod experimental;
 pub mod virtual_keyboard;
 
 use crate::virtual_keyboard::{ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin};
