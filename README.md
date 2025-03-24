@@ -23,6 +23,7 @@ Features:
 * [x] Limit input length.
 * [x] Filter input text with regex.
 * [x] Placeholder.
+* [x] Built-in virtual keyboard.
 
 Missing:
 * [ ] IME support.
@@ -136,8 +137,8 @@ Please see [LICENSE](./LICENSE).
 Compatible Bevy Versions
 ------------------------
 
-| bevy | bevy_text_edit       |
-|------|----------------------|
-| 0.15 | 0.4, branch `master` |
-| 0.14 | 0.1-0.3              |
-| 0.13 | 0.0.1-0.0.5          |
+| bevy | bevy_text_edit           |
+|------|--------------------------|
+| 0.15 | 0.4-0.5, branch `master` |
+| 0.14 | 0.1-0.3                  |
+| 0.13 | 0.0.1-0.0.5              |
