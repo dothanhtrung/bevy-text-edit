@@ -11,17 +11,19 @@ use bevy::prelude::{
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
-use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect, GameButtonPlugin};
+use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
+use bevy_support_misc::ui::UiSupportPlugin;
 
-const KEY_1U: f32 = 6.5;
-const KEY_MARGIN: Val = Val::Percent(0.5);
+const KEY_1U: f32 = 5.5;
+const KEY_MARGIN: f32 = 0.5;
+const ROW_MARGIN: f32 = 0.5;
 
 pub(crate) struct VirtualKeyboardPlugin;
 
 // TODO: Support gamepad
 impl Plugin for VirtualKeyboardPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(GameButtonPlugin)
+        app.add_plugins(UiSupportPlugin)
             .insert_resource(VirtualKeyboardTheme::new())
             .insert_resource(VirtualKeysList::default())
             .add_event::<VirtualKeyboardChanged>()
@@ -46,6 +48,8 @@ pub struct VirtualKeyboardTheme {
     pub text_color: Color,
     pub text_font: TextFont,
     pub key_size_1u: Val,
+    pub key_margin: Val,
+    pub row_margin: Val,
 }
 
 impl VirtualKeyboardTheme {
@@ -55,6 +59,8 @@ impl VirtualKeyboardTheme {
             button_color: Color::NONE,
             text_color: Color::WHITE,
             key_size_1u: Val::Percent(KEY_1U),
+            key_margin: Val::Percent(KEY_MARGIN),
+            row_margin: Val::Percent(ROW_MARGIN),
             ..Self::default()
         }
     }
@@ -133,7 +139,8 @@ impl Default for VirtualKeysList {
                 (("p", "P"), KeyCode::KeyP, None, 1.),
                 (("[", "{"), KeyCode::BracketLeft, None, 1.),
                 (("]", "}"), KeyCode::BracketRight, None, 1.),
-                (("\\", "|"), KeyCode::Backslash, None, 1.25),
+                (("\\", "|"), KeyCode::Backslash, None, 1.),
+                (("Del", "DEL"), KeyCode::Delete, Some((Key::Delete, Key::Delete)), 1.),
             ],
             vec![
                 (
@@ -153,7 +160,7 @@ impl Default for VirtualKeysList {
                 (("l", "L"), KeyCode::KeyL, None, 1.),
                 ((";", ":"), KeyCode::Semicolon, None, 1.),
                 (("'", "\""), KeyCode::Quote, None, 1.),
-                (("Del", "DEL"), KeyCode::Delete, Some((Key::Delete, Key::Delete)), 1.5),
+                (("Enter", "ENTER"), KeyCode::Enter, Some((Key::Enter, Key::Enter)), 1.5),
             ],
             vec![
                 (("z", "Z"), KeyCode::KeyZ, None, 1.),
@@ -249,6 +256,7 @@ fn spawn_virtual_keyboard(
             height: Val::Percent(40.),
             align_self: AlignSelf::End,
             justify_self: JustifySelf::Center,
+            justify_content: JustifyContent::End,
             ..default()
         },
         BackgroundColor(theme.bg_color),
@@ -261,7 +269,7 @@ fn spawn_virtual_keyboard(
                 .spawn(Node {
                     flex_direction: FlexDirection::Row,
                     height: Val::Percent(15.),
-                    margin: UiRect::top(Val::Percent(2.)),
+                    margin: UiRect::vertical(theme.row_margin),
                     align_content: AlignContent::Center,
                     justify_content: JustifyContent::Center,
                     ..default()
@@ -307,7 +315,7 @@ fn spawn_key(
             ButtonColorEffect::default(),
             Node {
                 width: theme.key_size_1u * key_size,
-                margin: UiRect::horizontal(KEY_MARGIN),
+                margin: UiRect::horizontal(theme.key_margin),
                 justify_items: JustifyItems::Center,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
