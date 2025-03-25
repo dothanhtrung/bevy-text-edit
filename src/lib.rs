@@ -286,11 +286,7 @@ fn unfocus_text_box(
             commands.entity(e).remove::<CursorPosition>();
             commands.entity(e).remove::<TextEditFocus>();
 
-            let edited_text = if text_editable.is_placeholder_shown {
-                String::new()
-            } else {
-                text.0.clone()
-            };
+            let edited_text = if text_editable.is_placeholder_shown { String::new() } else { text.0.clone() };
 
             let text_edited = TextEdited {
                 text: edited_text,
@@ -341,12 +337,25 @@ pub fn listen_changing_focus(
     mut text_edited_event: EventWriter<TextEdited>,
     mut show_virtual_kb_event: EventWriter<ShowVirtualKeyboard>,
     config: Res<TextEditConfig>,
+    mut events: EventReader<KeyboardInput>,
 ) {
+    let mut enter_key_pressed = false;
+    for event in events.read() {
+        // Only trigger changes at the first time the key is pressed.
+        if event.state == ButtonState::Released {
+            continue;
+        }
+        match &event.logical_key {
+            Key::Enter => enter_key_pressed = true,
+            _ => {}
+        }
+    }
     let clicked_elsewhere = input.just_pressed(MouseButton::Left);
-    if text_interactions.is_empty()
-        && virtual_key_interaction.is_empty()
-        && virtual_keyboard_interaction.is_empty()
-        && clicked_elsewhere
+    if enter_key_pressed
+        || (text_interactions.is_empty()
+            && virtual_key_interaction.is_empty()
+            && virtual_keyboard_interaction.is_empty()
+            && clicked_elsewhere)
     {
         unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
         show_virtual_kb_event.send(ShowVirtualKeyboard(false));
@@ -463,11 +472,7 @@ fn blink_cursor(
     for (mut text, cursor_pos) in query.iter_mut() {
         if config.blink && blink_interval.just_finished() && text.len() > cursor_pos.pos {
             let current_cursor = text.as_bytes()[cursor_pos.pos] as char;
-            let next_cursor = if current_cursor != **display_text_cursor {
-                **display_text_cursor
-            } else {
-                ' '
-            };
+            let next_cursor = if current_cursor != **display_text_cursor { **display_text_cursor } else { ' ' };
             text.replace_range(cursor_pos.pos..(cursor_pos.pos + 1), String::from(next_cursor).as_str());
         }
     }
