@@ -16,8 +16,9 @@ use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect, Ga
 const KEY_1U: f32 = 6.5;
 const KEY_MARGIN: Val = Val::Percent(0.5);
 
-pub struct VirtualKeyboardPlugin;
+pub(crate) struct VirtualKeyboardPlugin;
 
+// TODO: Support gamepad
 impl Plugin for VirtualKeyboardPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GameButtonPlugin)
@@ -68,349 +69,126 @@ pub struct VirtualKeyboard {
     show_alt: bool,
 }
 
+/// List of keys to display on virtual keyboard
 #[derive(Resource)]
 pub struct VirtualKeysList {
+    /// List of keys by row
     pub keys: Vec<Vec<(VirtualKeyLabel, VirtualKey, f32)>>,
+}
+
+impl From<Vec<Vec<((&str, &str), KeyCode, Option<(Key, Key)>, f32)>>> for VirtualKeysList {
+    /// If logical_key is None, it will be set as Key::Character from label
+    fn from(keys: Vec<Vec<((&str, &str), KeyCode, Option<(Key, Key)>, f32)>>) -> Self {
+        let mut ret = Self { keys: Vec::new() };
+        for row in keys {
+            let mut ret_row = Vec::new();
+            for (label, key_code, logical_key, size) in row {
+                let logical_key =
+                    logical_key.unwrap_or((Key::Character(label.0.into()), Key::Character(label.1.into())));
+                let vkey = VirtualKey::new(key_code, logical_key);
+                let label = VirtualKeyLabel::from(label);
+                ret_row.push((label, vkey, size));
+            }
+            ret.keys.push(ret_row);
+        }
+
+        ret
+    }
 }
 
 impl Default for VirtualKeysList {
     fn default() -> Self {
-        Self {
-            keys: vec![
-                vec![
-                    (
-                        VirtualKeyLabel::new("`", "~"),
-                        VirtualKey::new(
-                            KeyCode::Backquote,
-                            (Key::Character("`".into()), Key::Character("~".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("1", "!"),
-                        VirtualKey::new(
-                            KeyCode::Digit1,
-                            (Key::Character("1".into()), Key::Character("!".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("2", "@"),
-                        VirtualKey::new(
-                            KeyCode::Digit2,
-                            (Key::Character("2".into()), Key::Character("@".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("3", "#"),
-                        VirtualKey::new(
-                            KeyCode::Digit3,
-                            (Key::Character("3".into()), Key::Character("#".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("4", "$"),
-                        VirtualKey::new(
-                            KeyCode::Digit4,
-                            (Key::Character("4".into()), Key::Character("$".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("5", "%"),
-                        VirtualKey::new(
-                            KeyCode::Digit5,
-                            (Key::Character("5".into()), Key::Character("%".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("6", "^"),
-                        VirtualKey::new(
-                            KeyCode::Digit6,
-                            (Key::Character("6".into()), Key::Character("^".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("7", "&"),
-                        VirtualKey::new(
-                            KeyCode::Digit7,
-                            (Key::Character("7".into()), Key::Character("&".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("8", "*"),
-                        VirtualKey::new(
-                            KeyCode::Digit8,
-                            (Key::Character("8".into()), Key::Character("*".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("9", "("),
-                        VirtualKey::new(
-                            KeyCode::Digit9,
-                            (Key::Character("9".into()), Key::Character("(".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("0", ")"),
-                        VirtualKey::new(
-                            KeyCode::Digit0,
-                            (Key::Character("0".into()), Key::Character(")".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("-", "_"),
-                        VirtualKey::new(KeyCode::Minus, (Key::Character("-".into()), Key::Character("_".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("=", "+"),
-                        VirtualKey::new(KeyCode::Equal, (Key::Character("=".into()), Key::Character("+".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("Backspace", "BACKSPACE"),
-                        VirtualKey::new(KeyCode::Backspace, (Key::Backspace, Key::Backspace)),
-                        2.,
-                    ),
-                ],
-                vec![
-                    (
-                        VirtualKeyLabel::new("q", "Q"),
-                        VirtualKey::new(KeyCode::KeyQ, (Key::Character("q".into()), Key::Character("Q".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("w", "W"),
-                        VirtualKey::new(KeyCode::KeyW, (Key::Character("w".into()), Key::Character("W".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("e", "E"),
-                        VirtualKey::new(KeyCode::KeyE, (Key::Character("e".into()), Key::Character("E".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("r", "R"),
-                        VirtualKey::new(KeyCode::KeyR, (Key::Character("r".into()), Key::Character("R".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("t", "T"),
-                        VirtualKey::new(KeyCode::KeyT, (Key::Character("t".into()), Key::Character("T".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("y", "Y"),
-                        VirtualKey::new(KeyCode::KeyY, (Key::Character("y".into()), Key::Character("Y".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("u", "U"),
-                        VirtualKey::new(KeyCode::KeyU, (Key::Character("u".into()), Key::Character("U".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("i", "I"),
-                        VirtualKey::new(KeyCode::KeyI, (Key::Character("i".into()), Key::Character("I".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("o", "O"),
-                        VirtualKey::new(KeyCode::KeyO, (Key::Character("o".into()), Key::Character("O".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("p", "P"),
-                        VirtualKey::new(KeyCode::KeyP, (Key::Character("p".into()), Key::Character("P".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("[", "{"),
-                        VirtualKey::new(
-                            KeyCode::BracketLeft,
-                            (Key::Character("[".into()), Key::Character("{".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("]", "}"),
-                        VirtualKey::new(
-                            KeyCode::BracketRight,
-                            (Key::Character("]".into()), Key::Character("}".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("\\", "|"),
-                        VirtualKey::new(
-                            KeyCode::Backslash,
-                            (Key::Character("\\".into()), Key::Character("|".into())),
-                        ),
-                        1.25,
-                    ),
-                ],
-                vec![
-                    (
-                        VirtualKeyLabel::new("Shift", "SHIFT"),
-                        VirtualKey::new(KeyCode::ShiftLeft, (Key::Shift, Key::Shift)),
-                        1.5,
-                    ),
-                    (
-                        VirtualKeyLabel::new("a", "A"),
-                        VirtualKey::new(KeyCode::KeyA, (Key::Character("a".into()), Key::Character("A".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("s", "S"),
-                        VirtualKey::new(KeyCode::KeyS, (Key::Character("s".into()), Key::Character("S".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("d", "D"),
-                        VirtualKey::new(KeyCode::KeyD, (Key::Character("d".into()), Key::Character("D".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("f", "F"),
-                        VirtualKey::new(KeyCode::KeyF, (Key::Character("f".into()), Key::Character("F".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("g", "G"),
-                        VirtualKey::new(KeyCode::KeyG, (Key::Character("g".into()), Key::Character("G".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("h", "H"),
-                        VirtualKey::new(KeyCode::KeyH, (Key::Character("h".into()), Key::Character("H".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("j", "J"),
-                        VirtualKey::new(KeyCode::KeyJ, (Key::Character("j".into()), Key::Character("J".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("k", "K"),
-                        VirtualKey::new(KeyCode::KeyK, (Key::Character("k".into()), Key::Character("K".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("l", "L"),
-                        VirtualKey::new(KeyCode::KeyL, (Key::Character("l".into()), Key::Character("L".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new(";", ":"),
-                        VirtualKey::new(
-                            KeyCode::Semicolon,
-                            (Key::Character(";".into()), Key::Character(":".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("'", "\""),
-                        VirtualKey::new(
-                            KeyCode::Quote,
-                            (Key::Character("'".into()), Key::Character("\"".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("Del", "DEL"),
-                        VirtualKey::new(KeyCode::Delete, (Key::Delete, Key::Delete)),
-                        1.5,
-                    ),
-                ],
-                vec![
-                    (
-                        VirtualKeyLabel::new("z", "Z"),
-                        VirtualKey::new(KeyCode::KeyZ, (Key::Character("z".into()), Key::Character("Z".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("x", "X"),
-                        VirtualKey::new(KeyCode::KeyX, (Key::Character("x".into()), Key::Character("X".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("c", "C"),
-                        VirtualKey::new(KeyCode::KeyC, (Key::Character("c".into()), Key::Character("C".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("v", "V"),
-                        VirtualKey::new(KeyCode::KeyV, (Key::Character("v".into()), Key::Character("V".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("Space", "SPACE"),
-                        VirtualKey::new(KeyCode::Space, (Key::Space, Key::Space)),
-                        2.5,
-                    ),
-                    (
-                        VirtualKeyLabel::new("b", "B"),
-                        VirtualKey::new(KeyCode::KeyB, (Key::Character("b".into()), Key::Character("B".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("n", "N"),
-                        VirtualKey::new(KeyCode::KeyN, (Key::Character("n".into()), Key::Character("N".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("m", "M"),
-                        VirtualKey::new(KeyCode::KeyM, (Key::Character("m".into()), Key::Character("M".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new(",", "<"),
-                        VirtualKey::new(KeyCode::Comma, (Key::Character(",".into()), Key::Character("<".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new(".", ">"),
-                        VirtualKey::new(
-                            KeyCode::Period,
-                            (Key::Character(".".into()), Key::Character(">".into())),
-                        ),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("/", "?"),
-                        VirtualKey::new(KeyCode::Slash, (Key::Character("/".into()), Key::Character("?".into()))),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("<=", "<="),
-                        VirtualKey::new(KeyCode::ArrowLeft, (Key::ArrowLeft, Key::ArrowLeft)),
-                        1.,
-                    ),
-                    (
-                        VirtualKeyLabel::new("=>", "=>"),
-                        VirtualKey::new(KeyCode::ArrowRight, (Key::ArrowRight, Key::ArrowRight)),
-                        1.,
-                    ),
-                ],
+        Self::from(vec![
+            vec![
+                (("`", "~"), KeyCode::Backquote, None, 1.),
+                (("1", "!"), KeyCode::Digit1, None, 1.),
+                (("2", "@"), KeyCode::Digit2, None, 1.),
+                (("3", "#"), KeyCode::Digit3, None, 1.),
+                (("4", "$"), KeyCode::Digit4, None, 1.),
+                (("5", "%"), KeyCode::Digit5, None, 1.),
+                (("6", "^"), KeyCode::Digit6, None, 1.),
+                (("7", "&"), KeyCode::Digit7, None, 1.),
+                (("8", "*"), KeyCode::Digit8, None, 1.),
+                (("9", "("), KeyCode::Digit9, None, 1.),
+                (("0", ")"), KeyCode::Digit0, None, 1.),
+                (("-", "_"), KeyCode::Minus, None, 1.),
+                (("=", "+"), KeyCode::Equal, None, 1.),
+                (
+                    ("Backspace", "BACKSPACE"),
+                    KeyCode::Backspace,
+                    Some((Key::Backspace, Key::Backspace)),
+                    2.,
+                ),
             ],
-        }
+            vec![
+                (("q", "Q"), KeyCode::KeyQ, None, 1.),
+                (("w", "W"), KeyCode::KeyW, None, 1.),
+                (("e", "E"), KeyCode::KeyE, None, 1.),
+                (("r", "R"), KeyCode::KeyR, None, 1.),
+                (("t", "T"), KeyCode::KeyT, None, 1.),
+                (("y", "Y"), KeyCode::KeyY, None, 1.),
+                (("u", "U"), KeyCode::KeyU, None, 1.),
+                (("i", "I"), KeyCode::KeyI, None, 1.),
+                (("o", "O"), KeyCode::KeyO, None, 1.),
+                (("p", "P"), KeyCode::KeyP, None, 1.),
+                (("[", "{"), KeyCode::BracketLeft, None, 1.),
+                (("]", "}"), KeyCode::BracketRight, None, 1.),
+                (("\\", "|"), KeyCode::Backslash, None, 1.25),
+            ],
+            vec![
+                (
+                    ("Shift", "SHIFT"),
+                    KeyCode::ShiftLeft,
+                    Some((Key::Shift, Key::Shift)),
+                    1.5,
+                ),
+                (("a", "A"), KeyCode::KeyA, None, 1.),
+                (("s", "S"), KeyCode::KeyS, None, 1.),
+                (("d", "D"), KeyCode::KeyD, None, 1.),
+                (("f", "F"), KeyCode::KeyF, None, 1.),
+                (("g", "G"), KeyCode::KeyG, None, 1.),
+                (("h", "H"), KeyCode::KeyH, None, 1.),
+                (("j", "J"), KeyCode::KeyJ, None, 1.),
+                (("k", "K"), KeyCode::KeyK, None, 1.),
+                (("l", "L"), KeyCode::KeyL, None, 1.),
+                ((";", ":"), KeyCode::Semicolon, None, 1.),
+                (("'", "\""), KeyCode::Quote, None, 1.),
+                (("Del", "DEL"), KeyCode::Delete, Some((Key::Delete, Key::Delete)), 1.5),
+            ],
+            vec![
+                (("z", "Z"), KeyCode::KeyZ, None, 1.),
+                (("x", "X"), KeyCode::KeyX, None, 1.),
+                (("c", "C"), KeyCode::KeyC, None, 1.),
+                (("v", "V"), KeyCode::KeyV, None, 1.),
+                (("Space", "SPACE"), KeyCode::Space, Some((Key::Space, Key::Space)), 2.5),
+                (("b", "B"), KeyCode::KeyB, None, 1.),
+                (("n", "N"), KeyCode::KeyN, None, 1.),
+                (("m", "M"), KeyCode::KeyM, None, 1.),
+                ((",", "<"), KeyCode::Comma, None, 1.),
+                ((".", ">"), KeyCode::Period, None, 1.),
+                (("/", "?"), KeyCode::Slash, None, 1.),
+                (
+                    ("<=", "<="),
+                    KeyCode::ArrowLeft,
+                    Some((Key::ArrowLeft, Key::ArrowLeft)),
+                    1.,
+                ),
+                (
+                    ("=>", "=>"),
+                    KeyCode::ArrowRight,
+                    Some((Key::ArrowRight, Key::ArrowRight)),
+                    1.,
+                ),
+            ],
+        ])
     }
 }
 
 #[derive(Component)]
 #[require(Interaction)]
 pub struct VirtualKey {
-    key_code: KeyCode,
-    logical_key: (Key, Key),
+    pub key_code: KeyCode,
+    pub logical_key: (Key, Key),
 }
 
 impl VirtualKey {
@@ -422,8 +200,8 @@ impl VirtualKey {
 #[derive(Component, Clone)]
 #[require(Text)]
 pub struct VirtualKeyLabel {
-    main: String,
-    alt: String,
+    pub main: String,
+    pub alt: String,
 }
 
 impl VirtualKeyLabel {
@@ -432,6 +210,12 @@ impl VirtualKeyLabel {
             main: main.to_string(),
             alt: alt.to_string(),
         }
+    }
+}
+
+impl From<(&str, &str)> for VirtualKeyLabel {
+    fn from(value: (&str, &str)) -> Self {
+        Self::new(value.0, value.1)
     }
 }
 
@@ -559,18 +343,11 @@ fn on_click(
                 virtual_keyboard.show_alt = !virtual_keyboard.show_alt;
 
                 for (mut text, label) in text.iter_mut() {
-                    **text = if virtual_keyboard.show_alt {
-                        label.alt.clone()
-                    } else {
-                        label.main.clone()
-                    };
+                    **text = if virtual_keyboard.show_alt { label.alt.clone() } else { label.main.clone() };
                 }
             } else {
-                let logical_key = if virtual_keyboard.show_alt {
-                    key.logical_key.1.clone()
-                } else {
-                    key.logical_key.0.clone()
-                };
+                let logical_key =
+                    if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
                 event.send(KeyboardInput {
                     key_code: key.key_code,
                     logical_key,

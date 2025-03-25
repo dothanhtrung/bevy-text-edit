@@ -13,7 +13,7 @@ categories = ["game-development"]
 [dependencies]
 bevy = { version = "0.15", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs"], default-features = false }
 regex-lite = { version = "0.1" }
-bevy_support_misc = { version = "0.2", git = "https://gitlab.com/kimtinh/bevy-support-misc", branch = "master" }
+bevy_support_misc = { version = "0.3", git = "https://gitlab.com/kimtinh/bevy-support-misc", tag = "0.3", default-features = false }
 
 [dev-dependencies]
 bevy = { version = "0.15" }

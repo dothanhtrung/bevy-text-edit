@@ -25,8 +25,9 @@ Features:
 * [x] Placeholder.
 * [x] Built-in virtual keyboard.
 
-Missing:
-* [ ] IME support.
+Not support:
+* [ ] IME.
+* [ ] Multi-language.
 * [ ] Select text.
 * [ ] Copy/paste.
 
