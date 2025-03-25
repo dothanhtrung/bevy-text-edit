@@ -3,7 +3,6 @@
 use bevy::color::palettes::tailwind::{NEUTRAL_600, ZINC_800};
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
-use bevy_support_misc::ui::UiSupportPlugin;
 use bevy_text_edit::experimental::number_input::{spawn_number_input_text, NumberInputChanged, NumberInputSetting};
 use bevy_text_edit::TextEditPluginNoState;
 
@@ -16,7 +15,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((UiSupportPlugin, TextEditPluginNoState))
+        .add_plugins(TextEditPluginNoState)
         .add_systems(Startup, setup)
         .run();
 }

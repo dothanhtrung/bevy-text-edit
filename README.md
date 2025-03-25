@@ -13,6 +13,8 @@ bevy_text_edit
 
 ![](examples/text_edit.gif)
 
+![](examples/virtual_keyboard.png)
+
 </div>
 
 A very easy to use plugin for input text in Bevy. Good enough for game setting and command console.
@@ -30,6 +32,7 @@ Not support:
 * [ ] Multi-language.
 * [ ] Select text.
 * [ ] Copy/paste.
+* [ ] Repeated key.
 
 Quickstart
 ----------

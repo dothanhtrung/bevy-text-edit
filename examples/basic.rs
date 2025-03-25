@@ -32,8 +32,8 @@ fn setup(mut commands: Commands, mut config: ResMut<TextEditConfig>) {
             width: Val::Percent(100.),
             height: Val::Percent(100.),
             flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
+            margin: UiRect::top(Val::Percent(10.)),
             ..default()
         })
         .with_children(|parent| {

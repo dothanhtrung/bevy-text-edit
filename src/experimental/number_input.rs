@@ -1,14 +1,12 @@
-
+use crate::{TextEditable, TextEdited};
 use bevy::prelude::{
     default, AlignItems, BuildChildren, Button, ChildBuild, ChildBuilder, Click, Color, Commands, Component, Deref,
     DerefMut, Entity, Event, JustifyContent, JustifyItems, JustifyText, Node, Parent, Pointer, Query, Text, TextColor,
     TextFont, TextLayout, Trigger, UiRect, Val,
 };
 use bevy::ui::{AlignContent, BackgroundColor, FlexDirection};
-
-use std::cmp::{max, min};
 use bevy_support_misc::ui::button::ButtonColorEffect;
-use crate::{TextEditable, TextEdited};
+use std::cmp::{max, min};
 
 #[derive(Component)]
 struct NumberInput {
