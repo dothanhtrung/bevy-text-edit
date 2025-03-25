@@ -19,6 +19,7 @@ check:
   stage: build
   script:
     - rustc --version && cargo --version  # Print version info for debugging
+    - cargo check --examples
     - cargo check --features=experimental --examples
   cache:
     <<: *global_cache
