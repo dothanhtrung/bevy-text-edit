@@ -99,7 +99,7 @@ use bevy::input::ButtonState;
 use bevy::prelude::{in_state, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
-    IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, With, Without,
+    IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
@@ -338,6 +338,7 @@ pub fn listen_changing_focus(
     mut show_virtual_kb_event: EventWriter<ShowVirtualKeyboard>,
     config: Res<TextEditConfig>,
     mut events: EventReader<KeyboardInput>,
+    touches: Res<Touches>,
 ) {
     let mut enter_key_pressed = false;
     for event in events.read() {
@@ -350,7 +351,7 @@ pub fn listen_changing_focus(
             _ => {}
         }
     }
-    let clicked_elsewhere = input.just_pressed(MouseButton::Left);
+    let clicked_elsewhere = input.just_pressed(MouseButton::Left) || touches.any_just_pressed();
     if enter_key_pressed
         || (text_interactions.is_empty()
             && virtual_key_interaction.is_empty()
