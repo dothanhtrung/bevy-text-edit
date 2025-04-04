@@ -1,3 +1,5 @@
+// Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
+
 use bevy::app::{App, Plugin, Startup};
 use bevy::hierarchy::ChildBuild;
 use bevy::input::keyboard::{Key, KeyboardInput};
@@ -17,6 +19,8 @@ use bevy_support_misc::ui::UiSupportPlugin;
 const KEY_1U: f32 = 5.5;
 const KEY_MARGIN: f32 = 0.5;
 const ROW_MARGIN: f32 = 0.5;
+const WIDTH: f32 = 90.;
+const HEIGHT: f32 = 30.;
 
 pub(crate) struct VirtualKeyboardPlugin;
 
@@ -50,6 +54,8 @@ pub struct VirtualKeyboardTheme {
     pub key_size_1u: Val,
     pub key_margin: Val,
     pub row_margin: Val,
+    pub width: Val,
+    pub height: Val,
 }
 
 impl VirtualKeyboardTheme {
@@ -61,6 +67,8 @@ impl VirtualKeyboardTheme {
             key_size_1u: Val::Percent(KEY_1U),
             key_margin: Val::Percent(KEY_MARGIN),
             row_margin: Val::Percent(ROW_MARGIN),
+            width: Val::Percent(WIDTH),
+            height: Val::Percent(HEIGHT),
             ..Self::default()
         }
     }
@@ -226,11 +234,56 @@ impl From<(&str, &str)> for VirtualKeyLabel {
     }
 }
 
-/// Show virtual keyboard event:
-/// * true: show
-/// * false: hide
-#[derive(Event)]
-pub struct ShowVirtualKeyboard(pub bool);
+#[derive(Default, Clone, Copy)]
+pub enum VirtualKeyboardPos {
+    #[default]
+    Bottom,
+    Top,
+}
+
+/// Show virtual keyboard event
+#[derive(Event, Default)]
+pub struct ShowVirtualKeyboard {
+    /// * true: show
+    /// * false: hide
+    pub show: bool,
+
+    pub pos: Option<VirtualKeyboardPos>,
+}
+
+impl ShowVirtualKeyboard {
+    /// Show virtual keyboard at old position
+    pub fn show() -> Self {
+        Self {
+            show: true,
+            ..default()
+        }
+    }
+
+    /// Hide virtual keyboard
+    pub fn hide() -> Self {
+        Self {
+            show: false,
+            ..default()
+        }
+    }
+
+    /// Show virtual keyboard on top of screen
+    pub fn show_top() -> Self {
+        Self {
+            show: true,
+            pos: Some(VirtualKeyboardPos::Top),
+        }
+    }
+
+    /// Show virtual keyboard at bottom of screen
+    pub fn show_bottom() -> Self {
+        Self {
+            show: true,
+            pos: Some(VirtualKeyboardPos::Bottom),
+        }
+    }
+}
 
 fn spawn_virtual_keyboard(
     mut commands: Commands,
@@ -253,8 +306,8 @@ fn spawn_virtual_keyboard(
         FocusPolicy::Block,
         Node {
             flex_direction: FlexDirection::Column,
-            width: Val::Percent(98.),
-            height: Val::Percent(40.),
+            width: theme.width,
+            height: theme.height,
             align_self: AlignSelf::End,
             justify_self: JustifySelf::Center,
             justify_content: JustifyContent::End,
@@ -269,7 +322,7 @@ fn spawn_virtual_keyboard(
             builder
                 .spawn(Node {
                     flex_direction: FlexDirection::Row,
-                    height: Val::Percent(15.),
+                    height: Val::Percent(100. / keys.keys.len() as f32),
                     margin: UiRect::vertical(theme.row_margin),
                     align_content: AlignContent::Center,
                     justify_content: JustifyContent::Center,
@@ -286,16 +339,27 @@ fn spawn_virtual_keyboard(
 
 fn show_keyboard(
     mut events: EventReader<ShowVirtualKeyboard>,
-    mut query: Query<&mut Visibility, With<VirtualKeyboard>>,
+    mut query: Query<(&mut Visibility, &mut Node), With<VirtualKeyboard>>,
 ) {
     for event in events.read() {
-        if event.0 {
-            for mut visibility in query.iter_mut() {
-                *visibility = Visibility::Visible
+        if event.show {
+            for (mut visibility, mut node) in query.iter_mut() {
+                *visibility = Visibility::Visible;
+
+                if let Some(pos) = event.pos {
+                    match pos {
+                        VirtualKeyboardPos::Bottom => {
+                            node.align_self = AlignSelf::End;
+                        }
+                        VirtualKeyboardPos::Top => {
+                            node.align_self = AlignSelf::Start;
+                        }
+                    }
+                }
             }
         } else {
-            for mut visibility in query.iter_mut() {
-                *visibility = Visibility::Hidden
+            for (mut visibility, _) in query.iter_mut() {
+                *visibility = Visibility::Hidden;
             }
         }
     }

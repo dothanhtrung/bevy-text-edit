@@ -99,7 +99,8 @@ use bevy::input::ButtonState;
 use bevy::prelude::{in_state, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
-    IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
+    GlobalTransform, IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode,
+    Touches, Window, With, Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
@@ -322,7 +323,7 @@ fn focus_text_box(
 pub fn listen_changing_focus(
     mut commands: Commands,
     input: Res<ButtonInput<MouseButton>>,
-    mut text_interactions: Query<(&Interaction, Entity), (Changed<Interaction>, With<TextEditable>)>,
+    mut text_interactions: Query<(&Interaction, Entity, &GlobalTransform), (Changed<Interaction>, With<TextEditable>)>,
     virtual_key_interaction: Query<&Interaction, (Changed<Interaction>, With<VirtualKey>, Without<TextEditable>)>,
     virtual_keyboard_interaction: Query<
         &Interaction,
@@ -339,6 +340,7 @@ pub fn listen_changing_focus(
     config: Res<TextEditConfig>,
     mut events: EventReader<KeyboardInput>,
     touches: Res<Touches>,
+    windows: Query<&Window>,
 ) {
     let mut enter_key_pressed = false;
     for event in events.read() {
@@ -359,14 +361,23 @@ pub fn listen_changing_focus(
             && clicked_elsewhere)
     {
         unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
-        show_virtual_kb_event.send(ShowVirtualKeyboard(false));
+        show_virtual_kb_event.send(ShowVirtualKeyboard::hide());
         return;
     }
 
-    for (interaction, e) in text_interactions.iter_mut() {
+    for (interaction, e, global_transform) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
             if config.enable_virtual_keyboard {
-                show_virtual_kb_event.send(ShowVirtualKeyboard(true));
+                let event = if let Ok(window) = windows.get_single() {
+                    if global_transform.translation().y >= window.resolution.height() / 2. {
+                        ShowVirtualKeyboard::show_top()
+                    } else {
+                        ShowVirtualKeyboard::show_bottom()
+                    }
+                } else {
+                    ShowVirtualKeyboard::show()
+                };
+                show_virtual_kb_event.send(event);
             }
 
             let mut focusing_list = Vec::new();
