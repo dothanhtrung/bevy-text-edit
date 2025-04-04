@@ -8,7 +8,7 @@ use bevy::prelude::{
     IntoSystemConfigs, JustifyItems, KeyCode, Node, Pointer, Query, Res, Resource, Single, Text, TextColor, TextFont,
     Trigger, Update, Visibility, With, ZIndex,
 };
-use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, JustifyContent, JustifySelf, UiRect, Val};
+use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
 use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
@@ -250,6 +250,7 @@ fn spawn_virtual_keyboard(
 
     cmd.insert((
         VirtualKeyboard::default(),
+        FocusPolicy::Block,
         Node {
             flex_direction: FlexDirection::Column,
             width: Val::Percent(98.),
