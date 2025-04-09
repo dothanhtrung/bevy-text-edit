@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 use bevy_text_edit::virtual_keyboard::{VirtualKeyboardChanged, VirtualKeyboardTheme, VirtualKeysList};
-use bevy_text_edit::{TextEditConfig, TextEditPluginNoState, TextEditable};
+use bevy_text_edit::{TextEditConfig, TextEditPluginAnyState, TextEditable};
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TextEditPluginNoState))
+        .add_plugins((DefaultPlugins, TextEditPluginAnyState::any()))
         .add_systems(Startup, (setup, customize_virtual_keyboard))
         .run();
 }

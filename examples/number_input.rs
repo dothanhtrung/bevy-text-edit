@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy::window::WindowResolution;
 #[cfg(feature = "experimental")]
 use bevy_text_edit::experimental::number_input::{spawn_number_input_text, NumberInputChanged, NumberInputSetting};
-use bevy_text_edit::TextEditPluginNoState;
+use bevy_text_edit::TextEditPluginAnyState;
 
 fn main() {
     let mut app = App::new();
@@ -17,7 +17,7 @@ fn main() {
         }),
         ..default()
     }))
-    .add_plugins(TextEditPluginNoState);
+    .add_plugins(TextEditPluginAnyState::any());
 
     #[cfg(feature = "experimental")]
     app.add_systems(Startup, setup);
