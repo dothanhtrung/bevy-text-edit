@@ -58,14 +58,14 @@ fn main() {
 }
 ```
 
-If you don't care to game state and want to always run input text, use `TextEditPluginNoState`:
+If you don't care to game state and want to always run input text, use `TextEditPluginAnyState`:
 
 ```rust
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // Add the plugin
-        .add_plugins(TextEditPluginNoState)
+        .add_plugins(TextEditPluginAnyState::any())
         .add_systems(Startup, setup)
         .run();
 }

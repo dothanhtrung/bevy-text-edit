@@ -3,13 +3,7 @@ use bevy::input::{ButtonState, InputPlugin};
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy::time::TimePlugin;
-use bevy_text_edit::{TextEditFocus, TextEditable, TextEdited};
-
-#[cfg(feature = "state")]
-use bevy_text_edit::TextEditPlugin;
-
-#[cfg(not(feature = "state"))]
-use bevy_text_edit::TextEditPluginNoState;
+use bevy_text_edit::{TextEditFocus, TextEditPluginAnyState, TextEditable, TextEdited};
 
 const TEXT_1: &str = "Text_Section1";
 const TEXT_2: &str = "Text_Section2";
@@ -142,30 +136,17 @@ fn max_length() {
     assert_eq!(text1.0, "Text_Section1aa|".to_string());
 }
 
-#[cfg(feature = "state")]
-#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
-enum GameState {
-    #[default]
-    Menu,
-}
-
 fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, Entity, Entity) {
     let mut app = App::new();
     let mut text1 = Entity::from_raw(0);
     let mut text2 = Entity::from_raw(0);
 
-    #[cfg(feature = "state")]
     app.add_plugins((
         WindowPlugin::default(),
         InputPlugin,
-        StatesPlugin,
         TimePlugin,
-        TextEditPlugin::new(vec![GameState::Menu]),
-    ))
-    .init_state::<GameState>();
-
-    #[cfg(not(feature = "state"))]
-    app.add_plugins((WindowPlugin::default(), InputPlugin, TimePlugin, TextEditPluginNoState));
+        TextEditPluginAnyState::any(),
+    ));
 
     app.world_mut()
         .spawn(Node {

@@ -15,7 +15,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin need to be added before init_state
         .init_state::<GameState>()
-        // Add the plugin with state or TextEditPluginNoState
+        // Add the plugin with state or `TextEditPluginAnyState::any()`
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
         .add_systems(Startup, setup)
         .run();

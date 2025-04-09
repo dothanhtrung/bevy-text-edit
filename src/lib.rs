@@ -23,15 +23,15 @@
 //! }
 //! ```
 //!
-//! If you don't care to game state and want to always run input text, use `TextEditPluginNoState`:
+//! If you don't care to game state and want to always run input text, use `TextEditPluginAnyState`:
 //! ```rust
 //! use bevy::prelude::*;
-//! use bevy_text_edit::TextEditPluginNoState;
+//! use bevy_text_edit::TextEditPluginAnyState;
 //!
 //! App::new()
 //!     .add_plugins(DefaultPlugins)
 //!     // Add the plugin
-//!     .add_plugins(TextEditPluginNoState)
+//!     .add_plugins(TextEditPluginAnyState::any())
 //!     .run();
 //! ```
 //!
@@ -95,7 +95,6 @@ use crate::virtual_keyboard::{ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, 
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
-#[cfg(feature = "state")]
 use bevy::prelude::{in_state, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
@@ -137,7 +136,6 @@ pub struct DisplayTextCursor(char);
 pub struct BlinkInterval(Timer);
 
 /// The main plugin
-#[cfg(feature = "state")]
 #[derive(Default)]
 pub struct TextEditPlugin<T>
 where
@@ -147,7 +145,6 @@ where
     pub states: Option<Vec<T>>,
 }
 
-#[cfg(feature = "state")]
 impl<T> Plugin for TextEditPlugin<T>
 where
     T: States,
@@ -169,7 +166,6 @@ where
     }
 }
 
-#[cfg(feature = "state")]
 impl<T> TextEditPlugin<T>
 where
     T: States,
@@ -177,20 +173,21 @@ where
     pub fn new(states: Vec<T>) -> Self {
         Self { states: Some(states) }
     }
+
+    pub fn any() -> Self {
+        Self { states: None }
+    }
 }
 
-/// Use this if you don't care to state and want this plugin's systems always run.
-#[derive(Default)]
-pub struct TextEditPluginNoState;
+#[derive(States, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum DummyState {}
 
-impl Plugin for TextEditPluginNoState {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(VirtualKeyboardPlugin)
-            .insert_resource(TextEditConfig::new())
-            .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
-            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
-            .add_event::<TextEdited>()
-            .add_systems(Update, plugin_systems!());
+/// Use this if you don't care to state and want this plugin's systems always run.
+pub struct TextEditPluginAnyState;
+
+impl TextEditPluginAnyState {
+    pub fn any() -> TextEditPlugin<DummyState> {
+        TextEditPlugin::any()
     }
 }
 
