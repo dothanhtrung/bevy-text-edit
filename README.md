@@ -11,9 +11,9 @@ bevy_text_edit
 [![Gitlab](https://img.shields.io/badge/gitlab-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/kimtinh/bevy-text-edit)
 [![Github](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dothanhtrung/bevy-text-edit)
 
-![](examples/text_edit.gif)
+![](screenshots/text_edit.gif)
 
-![](examples/virtual_keyboard.png)
+![](screenshots/virtual_keyboard.png)
 
 </div>
 
@@ -25,7 +25,7 @@ Features:
 * [x] Limit input length.
 * [x] Filter input text with regex.
 * [x] Placeholder.
-* [x] Built-in virtual keyboard.
+* [x] In-game virtual keyboard.
 
 Not support:
 * [ ] IME.

@@ -1,3 +1,5 @@
+//! This is experimental, you don't need to care about this
+
 #[cfg(feature = "experimental")]
 use bevy::color::palettes::tailwind::{NEUTRAL_600, ZINC_800};
 use bevy::prelude::*;

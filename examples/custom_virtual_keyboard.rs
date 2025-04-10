@@ -53,5 +53,6 @@ fn customize_virtual_keyboard(
         vec![(("0", ""), KeyCode::Digit0, None, 1.)],
     ]);
 
+    // Noti event to respawn virtual keyboard
     virtual_keyboard_changed.send(VirtualKeyboardChanged);
 }
