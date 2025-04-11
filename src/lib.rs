@@ -95,11 +95,11 @@ use crate::virtual_keyboard::{ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, 
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
-use bevy::prelude::{in_state, States};
+use bevy::prelude::{in_state, IntoScheduleConfigs, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
-    GlobalTransform, IntoSystemConfigs, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode,
-    Touches, Window, With, Without,
+    GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, Window, With,
+    Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
@@ -300,7 +300,7 @@ fn unfocus_text_box(
                 text: edited_text,
                 entity: e,
             };
-            event.send(text_edited.clone());
+            event.write(text_edited.clone());
             commands.trigger_targets(text_edited, e);
         }
     }
@@ -368,14 +368,14 @@ pub fn listen_changing_focus(
             && clicked_elsewhere)
     {
         unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
-        show_virtual_kb_event.send(ShowVirtualKeyboard::hide());
+        show_virtual_kb_event.write(ShowVirtualKeyboard::hide());
         return;
     }
 
     for (interaction, e, global_transform) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
             if config.enable_virtual_keyboard {
-                let event = if let Ok(window) = windows.get_single() {
+                let event = if let Ok(window) = windows.single() {
                     if global_transform.translation().y >= window.resolution.height() / 2. {
                         ShowVirtualKeyboard::show_top()
                     } else {
@@ -384,7 +384,7 @@ pub fn listen_changing_focus(
                 } else {
                     ShowVirtualKeyboard::show()
                 };
-                show_virtual_kb_event.send(event);
+                show_virtual_kb_event.write(event);
             }
 
             let mut focusing_list = Vec::new();
