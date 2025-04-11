@@ -343,6 +343,7 @@ fn spawn_virtual_keyboard(
 fn show_keyboard(
     mut events: EventReader<ShowVirtualKeyboard>,
     mut query: Query<(&mut Visibility, &mut Node), With<VirtualKeyboard>>,
+    mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>,
 ) {
     for event in events.read() {
         if event.show {
@@ -363,6 +364,9 @@ fn show_keyboard(
         } else {
             for (mut visibility, _) in query.iter_mut() {
                 *visibility = Visibility::Hidden;
+                for mut timer in repeated_timer.iter_mut() {
+                    timer.pause();
+                }
             }
         }
     }
@@ -448,8 +452,8 @@ fn on_press(
     }
 }
 
-fn on_release(trigger: Trigger<Pointer<Up>>, mut keys: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = keys.get_mut(trigger.entity()) {
+fn on_release(trigger: Trigger<Pointer<Up>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity()) {
         timer.pause();
     }
 }
