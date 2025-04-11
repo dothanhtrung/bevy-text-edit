@@ -2,14 +2,14 @@
 
 use crate::TextEditConfig;
 use bevy::app::{App, Plugin, Startup};
-use bevy::hierarchy::ChildBuild;
+use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    on_event, AlignContent, AlignSelf, BorderColor, BuildChildren, ChildBuilder, Color, Commands, Component,
-    DespawnRecursiveExt, Down, Entity, Event, EventReader, EventWriter, Handle, Image, ImageNode, Interaction,
-    IntoSystemConfigs, JustifyItems, KeyCode, Node, Pointer, Query, Res, Resource, Single, Text, TextColor, TextFont,
-    Timer, TimerMode, Trigger, Up, Update, Visibility, With, ZIndex,
+    on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Entity, Event, EventReader,
+    EventWriter, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Node, Pointer,
+    Pressed, Query, Released, Res, Resource, Single, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update,
+    Visibility, With, ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
@@ -295,7 +295,7 @@ fn spawn_virtual_keyboard(
     query: Query<Entity, With<VirtualKeyboard>>,
 ) {
     for e in query.iter() {
-        commands.entity(e).despawn_recursive();
+        commands.entity(e).despawn();
     }
 
     let mut cmd = if let Some(image) = theme.bg_image.clone() {
@@ -373,7 +373,7 @@ fn show_keyboard(
 }
 
 fn spawn_key(
-    builder: &mut ChildBuilder,
+    builder: &mut RelatedSpawnerCommands<ChildOf>,
     label: &VirtualKeyLabel,
     key_code: KeyCode,
     logical_key: (Key, Key),
@@ -416,7 +416,7 @@ fn spawn_key(
 }
 
 fn on_press(
-    trigger: Trigger<Pointer<Down>>,
+    trigger: Trigger<Pointer<Pressed>>,
     mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
     mut event: EventWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
@@ -424,8 +424,8 @@ fn on_press(
     mut text: Query<(&mut Text, &VirtualKeyLabel)>,
     config: Res<TextEditConfig>,
 ) {
-    if let Ok(window) = windows.get_single() {
-        if let Ok((key, mut timer)) = keys.get_mut(trigger.entity()) {
+    if let Ok(window) = windows.single() {
+        if let Ok((key, mut timer)) = keys.get_mut(trigger.target()) {
             if key.logical_key.0 == Key::Shift {
                 virtual_keyboard.show_alt = !virtual_keyboard.show_alt;
 
@@ -440,20 +440,21 @@ fn on_press(
 
                 let logical_key =
                     if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
-                event.send(KeyboardInput {
+                event.write(KeyboardInput {
                     key_code: key.key_code,
                     logical_key,
                     state: ButtonState::Pressed,
                     repeat: false,
                     window,
+                    text: None, // FIXME: Do plugin need to send the key text
                 });
             }
         }
     }
 }
 
-fn on_release(trigger: Trigger<Pointer<Up>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity()) {
+fn on_release(trigger: Trigger<Pointer<Released>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
         timer.pause();
     }
 }
@@ -466,16 +467,17 @@ fn on_repeat(
     virtual_keyboard: Single<&VirtualKeyboard>,
     config: Res<TextEditConfig>,
 ) {
-    if let Ok(window) = windows.get_single() {
-        if let Ok((key, mut timer)) = keys.get_mut(trigger.entity()) {
+    if let Ok(window) = windows.single() {
+        if let Ok((key, mut timer)) = keys.get_mut(trigger.target()) {
             let logical_key =
                 if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
-            event.send(KeyboardInput {
+            event.write(KeyboardInput {
                 key_code: key.key_code,
                 logical_key,
                 state: ButtonState::Pressed,
                 repeat: false,
                 window,
+                text: None, // FIXME: Do plugin need to send the key text
             });
 
             let repeat_duration = Duration::from_secs_f32(config.repeated_key_timeout);
