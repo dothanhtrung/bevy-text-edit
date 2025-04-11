@@ -260,12 +260,22 @@ pub struct TextEditConfig {
     pub blink: bool,
 
     pub placeholder_alpha: f32,
+
+    /// Time (sec) wait before start repeat. Only apply to virtual keyboard.
+    /// Default: 0.5.
+    pub repeated_key_init_timeout: f32,
+
+    /// Time (sec) to repeat key. Only apply to virtual keyboard.
+    /// Default: 0.05.
+    pub repeated_key_timeout: f32,
 }
 
 impl TextEditConfig {
     pub fn new() -> Self {
         Self {
             placeholder_alpha: 0.2,
+            repeated_key_init_timeout: 0.5,
+            repeated_key_timeout: 0.05,
             ..Self::default()
         }
     }
@@ -401,7 +411,6 @@ fn listen_keyboard_input(
     display_cursor: Res<DisplayTextCursor>,
 ) {
     for event in events.read() {
-        // Only trigger changes at the first time the key is pressed.
         if event.state == ButtonState::Released {
             continue;
         }

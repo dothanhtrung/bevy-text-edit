@@ -1,33 +1,36 @@
 // Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
 
+use crate::TextEditConfig;
 use bevy::app::{App, Plugin, Startup};
 use bevy::hierarchy::ChildBuild;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    on_event, AlignContent, AlignSelf, BorderColor, BuildChildren, ChildBuilder, Click, Color, Commands, Component,
-    DespawnRecursiveExt, Entity, Event, EventReader, EventWriter, Handle, Image, ImageNode, Interaction,
+    on_event, AlignContent, AlignSelf, BorderColor, BuildChildren, ChildBuilder, Color, Commands, Component,
+    DespawnRecursiveExt, Down, Entity, Event, EventReader, EventWriter, Handle, Image, ImageNode, Interaction,
     IntoSystemConfigs, JustifyItems, KeyCode, Node, Pointer, Query, Res, Resource, Single, Text, TextColor, TextFont,
-    Trigger, Update, Visibility, With, ZIndex,
+    Timer, TimerMode, Trigger, Up, Update, Visibility, With, ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
+use bevy_support_misc::timer::{AutoTimer, AutoTimerFinished, TimerSupportPlugin};
 use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
 use bevy_support_misc::ui::UiSupportPlugin;
+use std::time::Duration;
 
-const KEY_1U: f32 = 5.5;
-const KEY_MARGIN: f32 = 0.3;
-const ROW_MARGIN: f32 = 0.4;
-const WIDTH: f32 = 90.;
-const HEIGHT: f32 = 30.;
+const KEY_1U: f32 = 5.5; // Percent
+const KEY_MARGIN: f32 = 0.3; // Percent
+const ROW_MARGIN: f32 = 0.4; // Percent
+const WIDTH: f32 = 90.; // Percent
+const HEIGHT: f32 = 30.; // Percent
 
 pub(crate) struct VirtualKeyboardPlugin;
 
 // TODO: Support gamepad
 impl Plugin for VirtualKeyboardPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(UiSupportPlugin)
+        app.add_plugins((UiSupportPlugin, TimerSupportPlugin))
             .insert_resource(VirtualKeyboardTheme::new())
             .insert_resource(VirtualKeysList::default())
             .add_event::<VirtualKeyboardChanged>()
@@ -373,6 +376,9 @@ fn spawn_key(
     key_size: f32, // 1u, 1.5u, 2u, ...
     theme: &VirtualKeyboardTheme,
 ) {
+    let mut timer = Timer::default();
+    timer.pause();
+
     builder
         .spawn((
             VirtualKey { key_code, logical_key },
@@ -390,6 +396,7 @@ fn spawn_key(
             },
             BorderColor::from(theme.border_color),
             BackgroundColor::from(theme.button_color),
+            AutoTimer(timer),
         ))
         .with_children(|builder| {
             builder.spawn((
@@ -399,19 +406,22 @@ fn spawn_key(
                 TextColor::from(theme.text_color),
             ));
         })
-        .observe(on_click);
+        .observe(on_press)
+        .observe(on_release)
+        .observe(on_repeat);
 }
 
-fn on_click(
-    trigger: Trigger<Pointer<Click>>,
-    keys: Query<&VirtualKey>,
+fn on_press(
+    trigger: Trigger<Pointer<Down>>,
+    mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
     mut event: EventWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut virtual_keyboard: Single<&mut VirtualKeyboard>,
     mut text: Query<(&mut Text, &VirtualKeyLabel)>,
+    config: Res<TextEditConfig>,
 ) {
     if let Ok(window) = windows.get_single() {
-        if let Ok(key) = keys.get(trigger.entity()) {
+        if let Ok((key, mut timer)) = keys.get_mut(trigger.entity()) {
             if key.logical_key.0 == Key::Shift {
                 virtual_keyboard.show_alt = !virtual_keyboard.show_alt;
 
@@ -419,6 +429,11 @@ fn on_click(
                     **text = if virtual_keyboard.show_alt { label.alt.clone() } else { label.main.clone() };
                 }
             } else {
+                timer.set_duration(Duration::from_secs_f32(config.repeated_key_init_timeout));
+                timer.set_mode(TimerMode::Once);
+                timer.reset();
+                timer.unpause();
+
                 let logical_key =
                     if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
                 event.send(KeyboardInput {
@@ -429,6 +444,44 @@ fn on_click(
                     window,
                 });
             }
+        }
+    }
+}
+
+fn on_release(trigger: Trigger<Pointer<Up>>, mut keys: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = keys.get_mut(trigger.entity()) {
+        timer.pause();
+    }
+}
+
+fn on_repeat(
+    trigger: Trigger<AutoTimerFinished>,
+    mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
+    windows: Query<Entity, With<PrimaryWindow>>,
+    mut event: EventWriter<KeyboardInput>,
+    virtual_keyboard: Single<&VirtualKeyboard>,
+    config: Res<TextEditConfig>,
+) {
+    if let Ok(window) = windows.get_single() {
+        if let Ok((key, mut timer)) = keys.get_mut(trigger.entity()) {
+            let logical_key =
+                if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
+            event.send(KeyboardInput {
+                key_code: key.key_code,
+                logical_key,
+                state: ButtonState::Pressed,
+                repeat: false,
+                window,
+            });
+
+            let repeat_duration = Duration::from_secs_f32(config.repeated_key_timeout);
+            if timer.duration() != repeat_duration {
+                timer.set_duration(repeat_duration);
+            }
+            if timer.mode() != TimerMode::Repeating {
+                timer.set_mode(TimerMode::Repeating);
+            }
+            timer.unpause();
         }
     }
 }

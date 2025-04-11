@@ -26,13 +26,14 @@ Features:
 * [x] Filter input text with regex.
 * [x] Placeholder.
 * [x] In-game virtual keyboard.
+  * [x] Repeated key. 
 
 Not support:
 * [ ] IME.
 * [ ] Multi-language.
 * [ ] Select text.
 * [ ] Copy/paste.
-* [ ] Repeated key.
+
 
 Quickstart
 ----------
