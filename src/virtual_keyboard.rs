@@ -17,8 +17,8 @@ use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
 use bevy_support_misc::ui::UiSupportPlugin;
 
 const KEY_1U: f32 = 5.5;
-const KEY_MARGIN: f32 = 0.5;
-const ROW_MARGIN: f32 = 0.5;
+const KEY_MARGIN: f32 = 0.3;
+const ROW_MARGIN: f32 = 0.4;
 const WIDTH: f32 = 90.;
 const HEIGHT: f32 = 30.;
 
