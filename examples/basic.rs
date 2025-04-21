@@ -13,7 +13,7 @@ struct Result;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin need to be added before init_state
+        .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin needs to be added before init_state
         .init_state::<GameState>()
         // Add the plugin with state or `TextEditPluginAnyState::any()`
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
@@ -24,7 +24,7 @@ fn main() {
 fn setup(mut commands: Commands, mut config: ResMut<TextEditConfig>) {
     commands.spawn(Camera2d::default());
 
-    // There is built-in virtual keyboard. You can enable it if needed.
+    // There is a built-in virtual keyboard. You can enable it if needed.
     config.enable_virtual_keyboard = true;
 
     commands

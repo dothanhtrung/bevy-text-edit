@@ -17,11 +17,11 @@ bevy_text_edit
 
 </div>
 
-A very easy to use plugin for input text in Bevy. Good enough for game setting and command console.
+A very easy-to-use plugin for input text in Bevy. Good enough for game setting and command console.
 
 Features:
 * [x] Switchable between multiple text boxes.
-* [x] Moving text cursor using arrow keys and Home/End.
+* [x] Moving the text cursor using arrow keys and Home/End.
 * [x] Limit input length.
 * [x] Filter input text with regex.
 * [x] Placeholder.
