@@ -11,7 +11,7 @@ exclude = ["assets", "examples", "tests", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.16.0-rc", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state"], default-features = false }
+bevy = { version = "0.16.0-rc", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking"], default-features = false }
 regex-lite = { version = "0.1" }
 bevy_support_misc = { version = "0.4.0-rc", default-features = false }
 
