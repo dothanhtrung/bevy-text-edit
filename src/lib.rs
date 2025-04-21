@@ -37,7 +37,7 @@
 //!
 //! ### Component
 //!
-//! Insert component `TextEditable` into any text entity that needs to be editable:
+//! Insert the component `TextEditable` into any text entity that needs to be editable:
 //!
 //! ```rust
 //! use bevy::prelude::*;
