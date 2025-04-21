@@ -118,6 +118,58 @@ macro_rules! plugin_systems {
     };
 }
 
+/// The main plugin
+#[derive(Default)]
+pub struct TextEditPlugin<T>
+where
+    T: States,
+{
+    /// List of game state that this plugin will run in.
+    pub states: Vec<T>,
+}
+
+impl<T> Plugin for TextEditPlugin<T>
+where
+    T: States,
+{
+    fn build(&self, app: &mut App) {
+        app.add_plugins(VirtualKeyboardPlugin)
+            .insert_resource(TextEditConfig::new())
+            .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
+            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
+            .add_event::<TextEdited>();
+
+        if self.states.is_empty() {
+            app.add_systems(Update, plugin_systems!());
+        } else {
+            for state in &self.states {
+                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
+            }
+        }
+    }
+}
+
+impl<T> TextEditPlugin<T>
+where
+    T: States,
+{
+    pub fn new(states: Vec<T>) -> Self {
+        Self { states }
+    }
+}
+
+#[derive(States, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum DummyState {}
+
+/// Use this if you don't care to state and want this plugin's systems always run.
+pub struct TextEditPluginAnyState;
+
+impl TextEditPluginAnyState {
+    pub fn any() -> TextEditPlugin<DummyState> {
+        TextEditPlugin::new(Vec::new())
+    }
+}
+
 const DEFAULT_CURSOR: char = '|';
 const BLINK_INTERVAL: f32 = 0.5;
 
@@ -134,62 +186,6 @@ pub struct DisplayTextCursor(char);
 /// Text cursor blink interval in millisecond.
 #[derive(Resource, Deref, DerefMut)]
 pub struct BlinkInterval(Timer);
-
-/// The main plugin
-#[derive(Default)]
-pub struct TextEditPlugin<T>
-where
-    T: States,
-{
-    /// List of game state that this plugin will run in.
-    pub states: Option<Vec<T>>,
-}
-
-impl<T> Plugin for TextEditPlugin<T>
-where
-    T: States,
-{
-    fn build(&self, app: &mut App) {
-        app.add_plugins(VirtualKeyboardPlugin)
-            .insert_resource(TextEditConfig::new())
-            .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
-            .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
-            .add_event::<TextEdited>();
-
-        if let Some(states) = &self.states {
-            for state in states {
-                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
-            }
-        } else {
-            app.add_systems(Update, plugin_systems!());
-        }
-    }
-}
-
-impl<T> TextEditPlugin<T>
-where
-    T: States,
-{
-    pub fn new(states: Vec<T>) -> Self {
-        Self { states: Some(states) }
-    }
-
-    pub fn any() -> Self {
-        Self { states: None }
-    }
-}
-
-#[derive(States, Clone, Debug, Hash, Eq, PartialEq)]
-pub enum DummyState {}
-
-/// Use this if you don't care to state and want this plugin's systems always run.
-pub struct TextEditPluginAnyState;
-
-impl TextEditPluginAnyState {
-    pub fn any() -> TextEditPlugin<DummyState> {
-        TextEditPlugin::any()
-    }
-}
 
 /// Mark a text entity is focused. Normally done by mouse click.
 #[derive(Component)]
