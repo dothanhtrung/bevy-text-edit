@@ -1,7 +1,6 @@
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::{ButtonState, InputPlugin};
 use bevy::prelude::*;
-use bevy::state::app::StatesPlugin;
 use bevy::time::TimePlugin;
 use bevy_text_edit::{TextEditFocus, TextEditPluginAnyState, TextEditable, TextEdited};
 
@@ -187,7 +186,9 @@ fn get_text(trigger: Trigger<TextEdited>) {
 
 fn send_key(world: &mut World, key_code: KeyCode, logical_key: Key) {
     let mut window = world.query::<(Entity, &Window)>();
-    let (window, _) = window.single(world);
+    let Ok((window, _)) = window.single(world) else {
+        return;
+    };
 
     world.resource_mut::<Events<KeyboardInput>>().send(KeyboardInput {
         key_code,
@@ -195,5 +196,6 @@ fn send_key(world: &mut World, key_code: KeyCode, logical_key: Key) {
         state: ButtonState::Pressed,
         window,
         repeat: false,
+        text: None,
     });
 }
