@@ -91,7 +91,9 @@
 pub mod experimental;
 pub mod virtual_keyboard;
 
-use crate::virtual_keyboard::{ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin};
+use crate::virtual_keyboard::{
+    ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos,
+};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
@@ -249,6 +251,9 @@ pub struct TextEdited {
 pub struct TextEditConfig {
     pub enable_virtual_keyboard: bool,
 
+    /// Fixed position of virtual keyboard
+    pub virtual_keyboard_pos: Option<VirtualKeyboardPos>,
+
     /// Blink the text cursor.
     pub blink: bool,
 
@@ -371,7 +376,12 @@ pub fn listen_changing_focus(
     for (interaction, e, global_transform) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
             if config.enable_virtual_keyboard {
-                let event = if let Ok(window) = windows.single() {
+                let event = if let Some(pos) = config.virtual_keyboard_pos {
+                    ShowVirtualKeyboard {
+                        show: true,
+                        pos: Some(pos),
+                    }
+                } else if let Ok(window) = windows.single() {
                     if global_transform.translation().y >= window.resolution.height() / 2. {
                         ShowVirtualKeyboard::show_top()
                     } else {
