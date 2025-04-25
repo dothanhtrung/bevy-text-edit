@@ -1,6 +1,6 @@
 [package]
 name = "bevy_text_edit"
-version = "0.6.0-rc.1"
+version = "0.6.0"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -11,12 +11,12 @@ exclude = ["assets", "examples", "tests", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.16.0-rc", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking"], default-features = false }
+bevy = { version = "0.16", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking"], default-features = false }
 regex-lite = { version = "0.1" }
-bevy_support_misc = { version = "0.4.0-rc", default-features = false }
+bevy_support_misc = { version = "0.4", default-features = false }
 
 [dev-dependencies]
-bevy = { version = "0.16.0-rc" }
+bevy = { version = "0.16" }
 
 [features]
 default = []
