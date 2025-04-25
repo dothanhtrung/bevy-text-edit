@@ -91,17 +91,14 @@
 pub mod experimental;
 pub mod virtual_keyboard;
 
-use crate::virtual_keyboard::{
-    ShowVirtualKeyboard, VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos,
-};
+use crate::virtual_keyboard::{VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos};
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{in_state, IntoScheduleConfigs, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
-    GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, Window, With,
-    Without,
+    GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
@@ -139,6 +136,7 @@ where
             .insert_resource(TextEditConfig::new())
             .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
+            .add_event::<TextFocusChanged>()
             .add_event::<TextEdited>();
 
         if self.states.is_empty() {
@@ -188,6 +186,13 @@ pub struct DisplayTextCursor(char);
 /// Text cursor blink interval in millisecond.
 #[derive(Resource, Deref, DerefMut)]
 pub struct BlinkInterval(Timer);
+
+/// Event when text is focused
+#[derive(Event)]
+pub enum TextFocusChanged {
+    Show(f32),
+    Hide,
+}
 
 /// Mark a text entity is focused. Normally done by mouse click.
 #[derive(Component)]
@@ -283,7 +288,7 @@ fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     ignore_entity: Option<Entity>,
-    event: &mut EventWriter<TextEdited>,
+    text_edited_event: &mut EventWriter<TextEdited>,
 ) {
     for (e, cursor, mut text, text_editable) in text_focus.iter_mut() {
         if ignore_entity.is_none() || e != ignore_entity.unwrap() {
@@ -301,7 +306,7 @@ fn unfocus_text_box(
                 text: edited_text,
                 entity: e,
             };
-            event.write(text_edited.clone());
+            text_edited_event.write(text_edited.clone());
             commands.trigger_targets(text_edited, e);
         }
     }
@@ -344,11 +349,9 @@ pub fn listen_changing_focus(
     >,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     mut text_edited_event: EventWriter<TextEdited>,
-    mut show_virtual_kb_event: EventWriter<ShowVirtualKeyboard>,
-    config: Res<TextEditConfig>,
+    mut focus_event: EventWriter<TextFocusChanged>,
     mut events: EventReader<KeyboardInput>,
     touches: Res<Touches>,
-    windows: Query<&Window>,
 ) {
     let mut enter_key_pressed = false;
     for event in events.read() {
@@ -369,29 +372,13 @@ pub fn listen_changing_focus(
             && clicked_elsewhere)
     {
         unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
-        show_virtual_kb_event.write(ShowVirtualKeyboard::hide());
+        focus_event.write(TextFocusChanged::Hide);
         return;
     }
 
     for (interaction, e, global_transform) in text_interactions.iter_mut() {
         if *interaction == Interaction::Pressed {
-            if config.enable_virtual_keyboard {
-                let event = if let Some(pos) = config.virtual_keyboard_pos {
-                    ShowVirtualKeyboard {
-                        show: true,
-                        pos: Some(pos),
-                    }
-                } else if let Ok(window) = windows.single() {
-                    if global_transform.translation().y >= window.resolution.height() / 2. {
-                        ShowVirtualKeyboard::show_top()
-                    } else {
-                        ShowVirtualKeyboard::show_bottom()
-                    }
-                } else {
-                    ShowVirtualKeyboard::show()
-                };
-                show_virtual_kb_event.write(event);
-            }
+            focus_event.write(TextFocusChanged::Show(global_transform.translation().y));
 
             let mut focusing_list = Vec::new();
             for (focusing_e, _, _, _) in focusing_texts.iter() {

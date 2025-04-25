@@ -1,6 +1,6 @@
 // Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
 
-use crate::TextEditConfig;
+use crate::{TextEditConfig, TextFocusChanged};
 use bevy::app::{App, Plugin, Startup};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::keyboard::{Key, KeyboardInput};
@@ -9,7 +9,7 @@ use bevy::prelude::{
     on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Entity, Event, EventReader,
     EventWriter, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Node, Pointer,
     Pressed, Query, Released, Res, Resource, Single, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update,
-    Visibility, With, ZIndex,
+    Visibility, Window, With, ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
@@ -34,12 +34,11 @@ impl Plugin for VirtualKeyboardPlugin {
             .insert_resource(VirtualKeyboardTheme::new())
             .insert_resource(VirtualKeysList::default())
             .add_event::<VirtualKeyboardChanged>()
-            .add_event::<ShowVirtualKeyboard>()
             .add_systems(Startup, spawn_virtual_keyboard)
             .add_systems(
                 Update,
                 (
-                    show_keyboard.run_if(on_event::<ShowVirtualKeyboard>),
+                    show_keyboard.run_if(on_event::<TextFocusChanged>),
                     spawn_virtual_keyboard.run_if(on_event::<VirtualKeyboardChanged>),
                 ),
             );
@@ -244,50 +243,6 @@ pub enum VirtualKeyboardPos {
     Top,
 }
 
-/// Show virtual keyboard event
-#[derive(Event, Default)]
-pub struct ShowVirtualKeyboard {
-    /// * true: show
-    /// * false: hide
-    pub show: bool,
-
-    pub pos: Option<VirtualKeyboardPos>,
-}
-
-impl ShowVirtualKeyboard {
-    /// Show virtual keyboard at old position
-    pub fn show() -> Self {
-        Self {
-            show: true,
-            ..default()
-        }
-    }
-
-    /// Hide virtual keyboard
-    pub fn hide() -> Self {
-        Self {
-            show: false,
-            ..default()
-        }
-    }
-
-    /// Show virtual keyboard on top of screen
-    pub fn show_top() -> Self {
-        Self {
-            show: true,
-            pos: Some(VirtualKeyboardPos::Top),
-        }
-    }
-
-    /// Show virtual keyboard at bottom of screen
-    pub fn show_bottom() -> Self {
-        Self {
-            show: true,
-            pos: Some(VirtualKeyboardPos::Bottom),
-        }
-    }
-}
-
 fn spawn_virtual_keyboard(
     mut commands: Commands,
     theme: Res<VirtualKeyboardTheme>,
@@ -341,31 +296,44 @@ fn spawn_virtual_keyboard(
 }
 
 fn show_keyboard(
-    mut events: EventReader<ShowVirtualKeyboard>,
+    mut events: EventReader<TextFocusChanged>,
     mut query: Query<(&mut Visibility, &mut Node), With<VirtualKeyboard>>,
     mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>,
+    config: Res<TextEditConfig>,
+    windows: Query<&Window>,
 ) {
     for event in events.read() {
-        if event.show {
-            for (mut visibility, mut node) in query.iter_mut() {
-                *visibility = Visibility::Visible;
+        match *event {
+            TextFocusChanged::Show(global_y) => {
+                if config.enable_virtual_keyboard {
+                    for (mut visibility, mut node) in query.iter_mut() {
+                        *visibility = Visibility::Visible;
 
-                if let Some(pos) = event.pos {
-                    match pos {
-                        VirtualKeyboardPos::Bottom => {
-                            node.align_self = AlignSelf::End;
-                        }
-                        VirtualKeyboardPos::Top => {
-                            node.align_self = AlignSelf::Start;
+                        if let Some(pos) = config.virtual_keyboard_pos {
+                            match pos {
+                                VirtualKeyboardPos::Bottom => {
+                                    node.align_self = AlignSelf::End;
+                                }
+                                VirtualKeyboardPos::Top => {
+                                    node.align_self = AlignSelf::Start;
+                                }
+                            }
+                        } else if let Ok(window) = windows.single() {
+                            if global_y >= window.resolution.height() / 2. {
+                                node.align_self = AlignSelf::Start;
+                            } else {
+                                node.align_self = AlignSelf::End;
+                            }
                         }
                     }
                 }
             }
-        } else {
-            for (mut visibility, _) in query.iter_mut() {
-                *visibility = Visibility::Hidden;
-                for mut timer in repeated_timer.iter_mut() {
-                    timer.pause();
+            TextFocusChanged::Hide => {
+                for (mut visibility, _) in query.iter_mut() {
+                    *visibility = Visibility::Hidden;
+                    for mut timer in repeated_timer.iter_mut() {
+                        timer.pause();
+                    }
                 }
             }
         }
