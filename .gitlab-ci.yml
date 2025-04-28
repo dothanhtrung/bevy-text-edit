@@ -15,25 +15,33 @@ cache: &global_cache
 variables:
   CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
 
-check:
-  stage: build
-  script:
-    - rustc --version && cargo --version  # Print version info for debugging
-    - cargo check --examples
-    - cargo check --features=experimental --examples
-  cache:
-    <<: *global_cache
-    policy: pull
+#check:
+#  stage: build
+#  script:
+#    - rustc --version && cargo --version  # Print version info for debugging
+#    - cargo check --examples
+#    - cargo check --features=experimental --examples
+#  cache:
+#    <<: *global_cache
+#    policy: pull
 
 test:
   stage: test
   script:
     - cargo test --tests
+    - cargo test --examples
     - cargo test --features=experimental --tests
+    - cargo test --features=experimental --examples
+  rules:
+    - changes:
+      - Cargo.toml
+      - src/**/*
+      - examples/**/*
+      - tests/**/*
 
-publish:
-  stage: deploy
-  script:
-    - cargo publish --token $CARGO_REGISTRY_TOKEN
-  only:
-    - tags
+#publish:
+#  stage: deploy
+#  script:
+#    - cargo publish --token $CARGO_REGISTRY_TOKEN
+#  only:
+#    - tags
