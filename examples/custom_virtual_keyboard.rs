@@ -54,5 +54,5 @@ fn customize_virtual_keyboard(
     ]);
 
     // Noti event to respawn virtual keyboard
-    virtual_keyboard_changed.send(VirtualKeyboardChanged);
+    virtual_keyboard_changed.write(VirtualKeyboardChanged);
 }
