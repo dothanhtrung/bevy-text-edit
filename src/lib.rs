@@ -156,6 +156,10 @@ where
     pub fn new(states: Vec<T>) -> Self {
         Self { states }
     }
+
+    pub fn any() -> Self {
+        Self { states: Vec::new() }
+    }
 }
 
 #[derive(States, Clone, Debug, Hash, Eq, PartialEq)]
