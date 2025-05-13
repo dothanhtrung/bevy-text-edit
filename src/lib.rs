@@ -132,7 +132,7 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.add_plugins(VirtualKeyboardPlugin)
+        app.add_plugins(VirtualKeyboardPlugin::new(self.states.clone()))
             .insert_resource(TextEditConfig::new())
             .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))

@@ -6,18 +6,27 @@ use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Entity, Event, EventReader,
-    EventWriter, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Node, Pointer,
-    Pressed, Query, Released, Res, Resource, Single, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update,
-    Visibility, Window, With, ZIndex,
+    in_state, on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Entity, Event,
+    EventReader, EventWriter, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Node,
+    Pointer, Pressed, Query, Released, Res, Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode,
+    Trigger, Update, Visibility, Window, With, ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
-use bevy_support_misc::timer::{AutoTimer, AutoTimerFinished, TimerSupportPlugin};
+use bevy_auto_timer::{ActionOnFinish, AutoTimer, AutoTimerFinished, AutoTimerPlugin};
 use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
 use bevy_support_misc::ui::UiSupportPlugin;
 use std::time::Duration;
+
+macro_rules! vk_plugin_systems {
+    ( ) => {
+        (
+            show_keyboard.run_if(on_event::<TextFocusChanged>),
+            spawn_virtual_keyboard.run_if(on_event::<VirtualKeyboardChanged>),
+        )
+    };
+}
 
 const KEY_1U: f32 = 5.5; // Percent
 const KEY_MARGIN: f32 = 0.3; // Percent
@@ -25,23 +34,42 @@ const ROW_MARGIN: f32 = 0.4; // Percent
 const WIDTH: f32 = 90.; // Percent
 const HEIGHT: f32 = 30.; // Percent
 
-pub(crate) struct VirtualKeyboardPlugin;
+pub(crate) struct VirtualKeyboardPlugin<T>
+where
+    T: States,
+{
+    /// List of game state that this plugin will run in.
+    pub states: Vec<T>,
+}
+
+impl<T> VirtualKeyboardPlugin<T>
+where
+    T: States,
+{
+    pub(crate) fn new(states: Vec<T>) -> Self {
+        Self { states }
+    }
+}
 
 // TODO: Support gamepad
-impl Plugin for VirtualKeyboardPlugin {
+impl<T> Plugin for VirtualKeyboardPlugin<T>
+where
+    T: States,
+{
     fn build(&self, app: &mut App) {
-        app.add_plugins((UiSupportPlugin, TimerSupportPlugin))
+        app.add_plugins((UiSupportPlugin, AutoTimerPlugin::new(self.states.clone())))
             .insert_resource(VirtualKeyboardTheme::new())
             .insert_resource(VirtualKeysList::default())
             .add_event::<VirtualKeyboardChanged>()
-            .add_systems(Startup, spawn_virtual_keyboard)
-            .add_systems(
-                Update,
-                (
-                    show_keyboard.run_if(on_event::<TextFocusChanged>),
-                    spawn_virtual_keyboard.run_if(on_event::<VirtualKeyboardChanged>),
-                ),
-            );
+            .add_systems(Startup, spawn_virtual_keyboard);
+
+        if self.states.is_empty() {
+            app.add_systems(Update, vk_plugin_systems!());
+        } else {
+            for state in &self.states {
+                app.add_systems(Update, vk_plugin_systems!().run_if(in_state(state.clone())));
+            }
+        }
     }
 }
 
@@ -332,7 +360,7 @@ fn show_keyboard(
                 for (mut visibility, _) in query.iter_mut() {
                     *visibility = Visibility::Hidden;
                     for mut timer in repeated_timer.iter_mut() {
-                        timer.pause();
+                        timer.timer.pause();
                     }
                 }
             }
@@ -368,7 +396,10 @@ fn spawn_key(
             },
             BorderColor::from(theme.border_color),
             BackgroundColor::from(theme.button_color),
-            AutoTimer(timer),
+            AutoTimer {
+                timer,
+                action_on_finish: ActionOnFinish::Nothing,
+            },
         ))
         .with_children(|builder| {
             builder.spawn((
@@ -401,10 +432,12 @@ fn on_press(
                     **text = if virtual_keyboard.show_alt { label.alt.clone() } else { label.main.clone() };
                 }
             } else {
-                timer.set_duration(Duration::from_secs_f32(config.repeated_key_init_timeout));
-                timer.set_mode(TimerMode::Once);
-                timer.reset();
-                timer.unpause();
+                timer
+                    .timer
+                    .set_duration(Duration::from_secs_f32(config.repeated_key_init_timeout));
+                timer.timer.set_mode(TimerMode::Once);
+                timer.timer.reset();
+                timer.timer.unpause();
 
                 let logical_key =
                     if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
@@ -423,7 +456,7 @@ fn on_press(
 
 fn on_release(trigger: Trigger<Pointer<Released>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
     if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
-        timer.pause();
+        timer.timer.pause();
     }
 }
 
@@ -449,13 +482,13 @@ fn on_repeat(
             });
 
             let repeat_duration = Duration::from_secs_f32(config.repeated_key_timeout);
-            if timer.duration() != repeat_duration {
-                timer.set_duration(repeat_duration);
+            if timer.timer.duration() != repeat_duration {
+                timer.timer.set_duration(repeat_duration);
             }
-            if timer.mode() != TimerMode::Repeating {
-                timer.set_mode(TimerMode::Repeating);
+            if timer.timer.mode() != TimerMode::Repeating {
+                timer.timer.set_mode(TimerMode::Repeating);
             }
-            timer.unpause();
+            timer.timer.unpause();
         }
     }
 }
