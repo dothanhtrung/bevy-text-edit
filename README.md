@@ -148,3 +148,11 @@ Compatible Bevy Versions
 | 0.15 | 0.4-0.5        |
 | 0.14 | 0.1-0.3        |
 | 0.13 | 0.0.1-0.0.5    |
+
+---------
+
+<div align="center">
+
+![git_bevy-text-edit](https://count.getloli.com/@git_bevy-text-edit?name=git_bevy-text-edit&theme=random&padding=10&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
+
+</div>
