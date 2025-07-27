@@ -92,14 +92,16 @@ pub mod experimental;
 pub mod virtual_keyboard;
 
 use crate::virtual_keyboard::{VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos};
+use arboard::Clipboard;
 use bevy::app::{App, Plugin, Update};
-use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
-use bevy::prelude::{in_state, IntoScheduleConfigs, States};
+use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::log::error;
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
     GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
 };
+use bevy::prelude::{IntoScheduleConfigs, KeyCode, States, in_state};
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
 use regex_lite::Regex;
@@ -136,6 +138,7 @@ where
             .insert_resource(TextEditConfig::new())
             .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
+            .insert_resource(ClipboardMng::new())
             .add_event::<TextFocusChanged>()
             .add_event::<TextEdited>();
 
@@ -288,6 +291,23 @@ impl TextEditConfig {
     }
 }
 
+#[derive(Resource)]
+struct ClipboardMng {
+    clipboard: Option<Clipboard>,
+}
+
+impl ClipboardMng {
+    fn new() -> Self {
+        match Clipboard::new() {
+            Ok(c) => Self { clipboard: Some(c) },
+            Err(e) => {
+                error!("Failed to create clipboard: {}", e);
+                Self { clipboard: None }
+            }
+        }
+    }
+}
+
 fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
@@ -403,7 +423,11 @@ fn listen_keyboard_input(
     mut events: EventReader<KeyboardInput>,
     mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
+    mut clipboard_mng: ResMut<ClipboardMng>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
+    let is_ctrl_pressed = keyboard_input.pressed(KeyCode::ControlRight) || keyboard_input.pressed(KeyCode::ControlLeft);
+
     for event in events.read() {
         if event.state == ButtonState::Released {
             continue;
@@ -435,14 +459,27 @@ fn listen_keyboard_input(
                     }
                 }
                 Key::Character(character) => {
-                    if is_ignored(ignore_list, allow_list, character.to_string())
-                        || (texteditable.max_length > 0 && text.len() > texteditable.max_length)
-                    {
-                        continue;
-                    }
-
-                    text.insert_str(cursor.pos, character);
-                    cursor.pos += character.len();
+                    let append_text = if character == "v" && is_ctrl_pressed {
+                        if let Some(clipboard) = clipboard_mng.clipboard.as_mut() {
+                            clipboard
+                                .get_text()
+                                .unwrap_or_default()
+                                .chars()
+                                .filter(|&c| !is_ignored(ignore_list, allow_list, c.to_string()))
+                                .collect()
+                        } else {
+                            String::new()
+                        }
+                    } else {
+                        if is_ignored(ignore_list, allow_list, character.to_string())
+                            || (texteditable.max_length > 0 && text.len() > texteditable.max_length)
+                        {
+                            continue;
+                        }
+                        character.to_string()
+                    };
+                    text.insert_str(cursor.pos, append_text.as_str());
+                    cursor.pos += append_text.len();
                 }
                 Key::ArrowLeft => {
                     if cursor.pos > 0 {
