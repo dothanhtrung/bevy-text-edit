@@ -22,4 +22,5 @@ bevy = { version = "0.16" }
 
 [features]
 default = []
+log = ["bevy/bevy_log"]
 experimental = []

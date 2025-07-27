@@ -94,14 +94,15 @@ pub mod virtual_keyboard;
 use crate::virtual_keyboard::{VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos};
 use arboard::Clipboard;
 use bevy::app::{App, Plugin, Update};
-use bevy::input::ButtonState;
 use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::input::ButtonState;
+#[cfg(feature = "log")]
 use bevy::log::error;
+use bevy::prelude::{in_state, IntoScheduleConfigs, KeyCode, States};
 use bevy::prelude::{
     Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
     GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
 };
-use bevy::prelude::{IntoScheduleConfigs, KeyCode, States, in_state};
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
 use regex_lite::Regex;
@@ -300,8 +301,9 @@ impl ClipboardMng {
     fn new() -> Self {
         match Clipboard::new() {
             Ok(c) => Self { clipboard: Some(c) },
-            Err(e) => {
-                error!("Failed to create clipboard: {}", e);
+            Err(_e) => {
+                #[cfg(feature = "log")]
+                error!("Failed to create clipboard: {}", _e);
                 Self { clipboard: None }
             }
         }
