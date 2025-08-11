@@ -13,7 +13,7 @@ categories = ["game-development"]
 [dependencies]
 bevy = { version = "0.16", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking"], default-features = false }
 regex-lite = { version = "0.1" }
-bevy_support_misc = { version = "0.4", default-features = false }
+bevy_support_misc = { version = "0.5", default-features = false }
 bevy_auto_timer = "0.1"
 arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"], optional = true }
 
