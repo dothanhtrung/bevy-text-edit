@@ -25,14 +25,16 @@ Features:
 * [x] Limit input length.
 * [x] Filter input text with regex.
 * [x] Placeholder.
+* [x] Paste with `Ctrl+v`.
 * [x] In-game virtual keyboard.
-  * [x] Repeated key. 
+  * [x] Repeated key.
 
 Not support:
 * [ ] IME.
-* [ ] Multi-language.
+* In-game virtual keyboard.
+  * [ ] Multi-language.
 * [ ] Select text.
-* [ ] Copy/paste.
+* [ ] Copy.
 
 
 Quickstart
@@ -84,7 +86,7 @@ fn setup(mut commands: Commands) {
 }
 ```
 
-Only text that is focused by clicking gets keyboard input.
+Only text focused by clicking gets keyboard input.
 
 It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute
 (regex is supported):
@@ -107,6 +109,7 @@ fn setup(mut commands: Commands) {
 The edited text can be retrieved from event or observe trigger `TextEdited`.
 
 ```rust
+// Get by event
 fn get_text(
     mut event: EventReader<TextEdited>,
 ) {
@@ -117,6 +120,7 @@ fn get_text(
 ```
 
 ```rust
+// Get by observing
 fn setup(mut commands: Commands) {
     commands.spawn((
         TextEditable::default(),
