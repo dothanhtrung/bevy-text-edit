@@ -577,10 +577,14 @@ fn on_selected(trigger: Trigger<KeySelected>, bg_keys: Query<(Entity, &mut Backg
     }
 }
 
-fn on_unselected(trigger: Trigger<KeySelected>, bg_keys: Query<(Entity, &mut BackgroundColor), With<VirtualKey>>) {
+fn on_unselected(
+    trigger: Trigger<KeySelected>,
+    bg_keys: Query<(Entity, &mut BackgroundColor), With<VirtualKey>>,
+    theme: Res<VirtualKeyboardTheme>,
+) {
     for (e, mut bg) in bg_keys {
         if e == trigger.target() {
-            bg.0 = bg.0.darker(0.3);
+            bg.0 = theme.button_color;
             return;
         }
     }
