@@ -7,9 +7,10 @@ use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
     in_state, on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Deref, DerefMut,
-    Entity, Event, EventReader, EventWriter, Gamepad, GamepadButton, Handle, Image, ImageNode,
-    Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Luminance, Node, Pointer, Pressed, Query, Released, Res, ResMut, Resource,
-    Single, States, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update, Visibility, Window, With, ZIndex,
+    Entity, Event, EventReader, EventWriter, Gamepad, GamepadButton, Handle, Image, ImageNode, Interaction,
+    IntoScheduleConfigs, JustifyItems, KeyCode, Luminance, Node, Out, Pointer, Pressed, Query, Released, Res, ResMut,
+    Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update, Visibility, Window, With,
+    ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
@@ -443,6 +444,7 @@ fn spawn_key(
         .observe(on_pointer_press)
         .observe(on_key_press)
         .observe(on_release)
+        .observe(on_out)
         .observe(on_repeat)
         .observe(on_selected)
         .observe(on_unselected)
@@ -498,6 +500,11 @@ fn on_press(
     text: &mut Query<(&mut Text, &VirtualKeyLabel)>,
     config: Res<TextEditConfig>,
 ) {
+    // Stop repeat timer of all other keys
+    for (_, mut timer) in keys.iter_mut() {
+        timer.timer.pause();
+    }
+
     if let Ok(window) = windows.single() {
         if let Ok((key, mut timer)) = keys.get_mut(target) {
             if key.logical_key.0 == Key::Shift {
@@ -530,6 +537,12 @@ fn on_press(
 }
 
 fn on_release(trigger: Trigger<Pointer<Released>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
+        timer.timer.pause();
+    }
+}
+
+fn on_out(trigger: Trigger<Pointer<Out>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
     if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
         timer.timer.pause();
     }
