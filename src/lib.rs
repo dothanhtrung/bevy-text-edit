@@ -379,19 +379,20 @@ pub fn listen_changing_focus(
     mut events: EventReader<KeyboardInput>,
     touches: Res<Touches>,
 ) {
-    let mut enter_key_pressed = false;
+    let mut unfocus_key_pressed = false;
     for event in events.read() {
         // Only trigger changes at the first time the key is pressed.
         if event.state == ButtonState::Released {
             continue;
         }
         match &event.logical_key {
-            Key::Enter => enter_key_pressed = true,
+            Key::Enter => unfocus_key_pressed = true,
+            Key::Escape => unfocus_key_pressed = true,
             _ => {}
         }
     }
     let clicked_elsewhere = input.just_pressed(MouseButton::Left) || touches.any_just_pressed();
-    if enter_key_pressed
+    if unfocus_key_pressed
         || (text_interactions.is_empty()
             && virtual_key_interaction.is_empty()
             && virtual_keyboard_interaction.is_empty()
