@@ -596,6 +596,8 @@ fn gamepad_system(
     mut selecting_key: ResMut<SelectingKey>,
     keys: Res<VirtualKeysList>,
     key_entities: Res<VirtualKeyEntities>,
+    mut event: EventWriter<KeyboardInput>,
+    windows: Query<Entity, With<PrimaryWindow>>,
 ) {
     if keys.keys.is_empty() || selecting_key.row >= keys.keys.len() {
         return;
@@ -628,6 +630,19 @@ fn gamepad_system(
                 let e = key_entities[selecting_key.row][selecting_key.col];
                 commands.trigger_targets(KeyPressed, e);
             }
+        } else if gamepad.just_pressed(GamepadButton::East) {
+            if let Ok(window) = windows.single() {
+                event.write(KeyboardInput {
+                    key_code: KeyCode::Escape,
+                    logical_key: Key::Escape,
+                    state: ButtonState::Pressed,
+                    repeat: false,
+                    window,
+                    text: None,
+                });
+            }
+            selecting_key.col = 0;
+            selecting_key.row = 0;
         }
     }
 
