@@ -7,8 +7,8 @@ use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
     in_state, on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Deref, DerefMut,
-    Entity, Event, EventReader, EventWriter, Gamepad, GamepadButton, Handle, Image, ImageNode, Interaction,
-    IntoScheduleConfigs, JustifyItems, KeyCode, Luminance, Node, Out, Pointer, Pressed, Query, Released, Res, ResMut,
+    Entity, Event, EventReader, EventWriter, Gamepad, GamepadButton, Handle, Image, ImageNode,
+    Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Luminance, Node, Out, Pointer, Pressed, Query, Released, Res, ResMut,
     Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update, Visibility, Window, With,
     ZIndex,
 };
@@ -18,7 +18,6 @@ use bevy::window::PrimaryWindow;
 use bevy_auto_timer::{ActionOnFinish, AutoTimer, AutoTimerFinished, AutoTimerPlugin};
 use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
 use bevy_support_misc::ui::UiSupportPlugin;
-use std::cmp::max;
 use std::time::Duration;
 
 macro_rules! vk_plugin_systems {
@@ -294,6 +293,9 @@ struct KeyUnselected;
 #[derive(Event)]
 struct KeyPressed;
 
+#[derive(Event)]
+struct KeyReleased;
+
 fn spawn_virtual_keyboard(
     mut commands: Commands,
     theme: Res<VirtualKeyboardTheme>,
@@ -443,7 +445,8 @@ fn spawn_key(
         })
         .observe(on_pointer_press)
         .observe(on_key_press)
-        .observe(on_release)
+        .observe(on_pointer_release)
+        .observe(on_key_release)
         .observe(on_out)
         .observe(on_repeat)
         .observe(on_selected)
@@ -536,7 +539,16 @@ fn on_press(
     }
 }
 
-fn on_release(trigger: Trigger<Pointer<Released>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+fn on_pointer_release(
+    trigger: Trigger<Pointer<Released>>,
+    mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>,
+) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
+        timer.timer.pause();
+    }
+}
+
+fn on_key_release(trigger: Trigger<KeyReleased>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
     if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
         timer.timer.pause();
     }
@@ -581,10 +593,14 @@ fn on_repeat(
     }
 }
 
-fn on_selected(trigger: Trigger<KeySelected>, bg_keys: Query<(Entity, &mut BackgroundColor), With<VirtualKey>>) {
-    for (e, mut bg) in bg_keys {
+fn on_selected(
+    trigger: Trigger<KeySelected>,
+    selected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
+) {
+    for (e, mut bg, mut border) in selected_keys {
         if e == trigger.target() {
             bg.0 = bg.0.lighter(0.3);
+            border.0 = border.0.lighter(0.3);
             return;
         }
     }
@@ -592,12 +608,13 @@ fn on_selected(trigger: Trigger<KeySelected>, bg_keys: Query<(Entity, &mut Backg
 
 fn on_unselected(
     trigger: Trigger<KeySelected>,
-    bg_keys: Query<(Entity, &mut BackgroundColor), With<VirtualKey>>,
+    unselected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
     theme: Res<VirtualKeyboardTheme>,
 ) {
-    for (e, mut bg) in bg_keys {
+    for (e, mut bg, mut border) in unselected_keys {
         if e == trigger.target() {
             bg.0 = theme.button_color;
+            border.0 = theme.border_color;
             return;
         }
     }
@@ -623,16 +640,16 @@ fn gamepad_system(
 
     for gamepad in &gamepads {
         if gamepad.just_pressed(GamepadButton::DPadUp) {
-            selecting_key.row = max(selecting_key.row - 1, 0);
+            selecting_key.row = selecting_key.row.saturating_sub(1);
             select_changed = true;
         } else if gamepad.just_pressed(GamepadButton::DPadDown) {
             selecting_key.row = (selecting_key.row + 1) % row_length;
             select_changed = true;
         } else if gamepad.just_pressed(GamepadButton::DPadLeft) {
-            selecting_key.col = max(selecting_key.col - 1, 0);
+            selecting_key.col = selecting_key.col.saturating_sub(1);
             select_changed = true;
         } else if gamepad.just_pressed(GamepadButton::DPadRight) {
-            selecting_key.col = selecting_key.col + 1;
+            selecting_key.col += 1;
             if selecting_key.col >= col_length {
                 selecting_key.col = 0;
                 selecting_key.row = (selecting_key.row + 1) % row_length;
@@ -656,6 +673,9 @@ fn gamepad_system(
             }
             selecting_key.col = 0;
             selecting_key.row = 0;
+        } else if gamepad.any_just_released(GamepadButton::all()) {
+            let e = key_entities[selecting_key.row][selecting_key.col];
+            commands.trigger_targets(KeyReleased, e);
         }
     }
 
