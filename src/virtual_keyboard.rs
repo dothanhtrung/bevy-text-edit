@@ -91,6 +91,7 @@ pub struct VirtualKeyboardTheme {
     pub height: Val,
 }
 
+// TODO: Provide some presets
 impl VirtualKeyboardTheme {
     fn new() -> Self {
         Self {
