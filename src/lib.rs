@@ -92,6 +92,7 @@ pub mod experimental;
 pub mod virtual_keyboard;
 
 use crate::virtual_keyboard::{VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos};
+#[cfg(feature = "clipboard")]
 use arboard::Clipboard;
 use bevy::app::{App, Plugin, Update};
 use bevy::input::keyboard::{Key, KeyboardInput};
@@ -139,9 +140,11 @@ where
             .insert_resource(TextEditConfig::new())
             .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
-            .insert_resource(ClipboardMng::new())
             .add_event::<TextFocusChanged>()
             .add_event::<TextEdited>();
+
+        #[cfg(feature = "clipboard")]
+        app.insert_resource(ClipboardMng::new());
 
         if self.states.is_empty() {
             app.add_systems(Update, plugin_systems!());
@@ -206,7 +209,7 @@ pub enum TextFocusChanged {
 #[derive(Component)]
 pub struct TextEditFocus;
 
-/// Mark a text is editable.  
+/// Mark a text is editable.
 /// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute (regex is supported):
 /// ```rust
 /// use bevy::prelude::*;
@@ -292,11 +295,13 @@ impl TextEditConfig {
     }
 }
 
+#[cfg(feature = "clipboard")]
 #[derive(Resource)]
 struct ClipboardMng {
     clipboard: Option<Clipboard>,
 }
 
+#[cfg(feature = "clipboard")]
 impl ClipboardMng {
     fn new() -> Self {
         match Clipboard::new() {
@@ -426,7 +431,7 @@ fn listen_keyboard_input(
     mut events: EventReader<KeyboardInput>,
     mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
-    mut clipboard_mng: ResMut<ClipboardMng>,
+    #[cfg(feature = "clipboard")] mut clipboard_mng: ResMut<ClipboardMng>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let is_ctrl_pressed = keyboard_input.pressed(KeyCode::ControlRight) || keyboard_input.pressed(KeyCode::ControlLeft);
@@ -462,16 +467,20 @@ fn listen_keyboard_input(
                     }
                 }
                 Key::Character(character) => {
-                    let append_text = if character == "v" && is_ctrl_pressed {
+                    if character == "v" && is_ctrl_pressed && cfg!(feature = "clipboard") {
+                        #[cfg(feature = "clipboard")]
                         if let Some(clipboard) = clipboard_mng.clipboard.as_mut() {
-                            clipboard
+                            let append_text: String = clipboard
                                 .get_text()
                                 .unwrap_or_default()
                                 .chars()
                                 .filter(|&c| !is_ignored(ignore_list, allow_list, c.to_string()))
-                                .collect()
+                                .collect();
+
+                            text.insert_str(cursor.pos, append_text.as_str());
+                            cursor.pos += append_text.len();
                         } else {
-                            String::new()
+                            continue;
                         }
                     } else {
                         if is_ignored(ignore_list, allow_list, character.to_string())
@@ -479,10 +488,11 @@ fn listen_keyboard_input(
                         {
                             continue;
                         }
-                        character.to_string()
-                    };
-                    text.insert_str(cursor.pos, append_text.as_str());
-                    cursor.pos += append_text.len();
+                        let append_text = character.to_string();
+
+                        text.insert_str(cursor.pos, append_text.as_str());
+                        cursor.pos += append_text.len();
+                    }
                 }
                 Key::ArrowLeft => {
                     if cursor.pos > 0 {

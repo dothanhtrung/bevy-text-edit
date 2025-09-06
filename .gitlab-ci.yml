@@ -32,6 +32,8 @@ test:
     - cargo test --examples
     - cargo test --features=experimental --tests
     - cargo test --features=experimental --examples
+    - cargo test --no-default-features --tests
+    - cargo test --no-default-features --examples
   rules:
     - changes:
       - Cargo.toml
