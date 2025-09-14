@@ -111,7 +111,7 @@ The edited text can be retrieved from event or observe trigger `TextEdited`.
 ```rust
 // Get by event
 fn get_text(
-    mut event: EventReader<TextEdited>,
+    mut event: MessageReader<TextEdited>,
 ) {
     for e in event.read() {
         info!("Entity {}: {}", e.entity, e.text);
@@ -129,7 +129,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn get_text(
-    trigger: Trigger<TextEdited>,
+    trigger: On<TextEdited>,
 ) {
     let text = trigger.text.as_str();
     info!("{}", text);

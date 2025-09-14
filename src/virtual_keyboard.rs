@@ -6,11 +6,11 @@ use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    in_state, on_event, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Deref, DerefMut,
-    Entity, Event, EventReader, EventWriter, Gamepad, GamepadButton, Handle, Image, ImageNode,
-    Interaction, IntoScheduleConfigs, JustifyItems, KeyCode, Luminance, Node, Out, Pointer, Pressed, Query, Released, Res, ResMut,
-    Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode, Trigger, Update, Visibility, Window, With,
-    ZIndex,
+    in_state, on_message, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Deref, DerefMut,
+    Entity, EntityEvent, Gamepad, GamepadButton, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs,
+    JustifyItems, KeyCode, Luminance, Message, MessageReader, MessageWriter, Node, On, Out, Pointer, Press, Query, Release,
+    Res, ResMut, Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode, Update, Visibility, Window,
+    With, ZIndex,
 };
 use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
 use bevy::utils::default;
@@ -23,8 +23,8 @@ use std::time::Duration;
 macro_rules! vk_plugin_systems {
     ( ) => {
         (
-            show_keyboard.run_if(on_event::<TextFocusChanged>),
-            spawn_virtual_keyboard.run_if(on_event::<VirtualKeyboardChanged>),
+            show_keyboard.run_if(on_message::<TextFocusChanged>),
+            spawn_virtual_keyboard.run_if(on_message::<VirtualKeyboardChanged>),
             gamepad_system,
         )
     };
@@ -63,7 +63,7 @@ where
             .insert_resource(VirtualKeysList::default())
             .insert_resource(VirtualKeyEntities::default())
             .insert_resource(SelectingKey::default())
-            .add_event::<VirtualKeyboardChanged>()
+            .add_message::<VirtualKeyboardChanged>()
             .add_systems(Startup, spawn_virtual_keyboard);
 
         if self.states.is_empty() {
@@ -108,7 +108,7 @@ impl VirtualKeyboardTheme {
     }
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct VirtualKeyboardChanged;
 
 #[derive(Component, Default)]
@@ -285,17 +285,25 @@ struct SelectingKey {
     col: usize,
 }
 
-#[derive(Event)]
-struct KeySelected;
+#[derive(EntityEvent)]
+struct KeySelected {
+    pub entity: Entity,
+}
 
-#[derive(Event)]
-struct KeyUnselected;
+#[derive(EntityEvent)]
+struct KeyUnselected {
+    pub entity: Entity,
+}
 
-#[derive(Event)]
-struct KeyPressed;
+#[derive(EntityEvent)]
+struct KeyPressed {
+    pub entity: Entity,
+}
 
-#[derive(Event)]
-struct KeyReleased;
+#[derive(EntityEvent)]
+struct KeyReleased {
+    pub entity: Entity,
+}
 
 fn spawn_virtual_keyboard(
     mut commands: Commands,
@@ -359,7 +367,7 @@ fn spawn_virtual_keyboard(
 }
 
 fn show_keyboard(
-    mut events: EventReader<TextFocusChanged>,
+    mut events: MessageReader<TextFocusChanged>,
     mut query: Query<(&mut Visibility, &mut Node), With<VirtualKeyboard>>,
     mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>,
     config: Res<TextEditConfig>,
@@ -456,16 +464,16 @@ fn spawn_key(
 }
 
 fn on_pointer_press(
-    trigger: Trigger<Pointer<Pressed>>,
+    trigger: On<Pointer<Press>>,
     mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
-    mut event: EventWriter<KeyboardInput>,
+    mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut virtual_keyboard: Single<&mut VirtualKeyboard>,
     mut text: Query<(&mut Text, &VirtualKeyLabel)>,
     config: Res<TextEditConfig>,
 ) {
     on_press(
-        trigger.target(),
+        trigger.entity,
         &mut keys,
         &mut event,
         windows,
@@ -476,16 +484,16 @@ fn on_pointer_press(
 }
 
 fn on_key_press(
-    trigger: Trigger<KeyPressed>,
+    trigger: On<KeyPressed>,
     mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
-    mut event: EventWriter<KeyboardInput>,
+    mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut virtual_keyboard: Single<&mut VirtualKeyboard>,
     mut text: Query<(&mut Text, &VirtualKeyLabel)>,
     config: Res<TextEditConfig>,
 ) {
     on_press(
-        trigger.target(),
+        trigger.entity,
         &mut keys,
         &mut event,
         windows,
@@ -498,7 +506,7 @@ fn on_key_press(
 fn on_press(
     target: Entity,
     keys: &mut Query<(&VirtualKey, &mut AutoTimer)>,
-    event: &mut EventWriter<KeyboardInput>,
+    event: &mut MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     virtual_keyboard: &mut Single<&mut VirtualKeyboard>,
     text: &mut Query<(&mut Text, &VirtualKeyLabel)>,
@@ -540,37 +548,34 @@ fn on_press(
     }
 }
 
-fn on_pointer_release(
-    trigger: Trigger<Pointer<Released>>,
-    mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>,
-) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
+fn on_pointer_release(trigger: On<Pointer<Release>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
         timer.timer.pause();
     }
 }
 
-fn on_key_release(trigger: Trigger<KeyReleased>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
+fn on_key_release(trigger: On<KeyReleased>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
         timer.timer.pause();
     }
 }
 
-fn on_out(trigger: Trigger<Pointer<Out>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.target()) {
+fn on_out(trigger: On<Pointer<Out>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
+    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
         timer.timer.pause();
     }
 }
 
 fn on_repeat(
-    trigger: Trigger<AutoTimerFinished>,
+    trigger: On<AutoTimerFinished>,
     mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
     windows: Query<Entity, With<PrimaryWindow>>,
-    mut event: EventWriter<KeyboardInput>,
+    mut event: MessageWriter<KeyboardInput>,
     virtual_keyboard: Single<&VirtualKeyboard>,
     config: Res<TextEditConfig>,
 ) {
     if let Ok(window) = windows.single() {
-        if let Ok((key, mut timer)) = keys.get_mut(trigger.target()) {
+        if let Ok((key, mut timer)) = keys.get_mut(trigger.entity) {
             let logical_key =
                 if virtual_keyboard.show_alt { key.logical_key.1.clone() } else { key.logical_key.0.clone() };
             event.write(KeyboardInput {
@@ -595,27 +600,27 @@ fn on_repeat(
 }
 
 fn on_selected(
-    trigger: Trigger<KeySelected>,
+    trigger: On<KeySelected>,
     selected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
 ) {
     for (e, mut bg, mut border) in selected_keys {
-        if e == trigger.target() {
+        if e == trigger.entity {
             bg.0 = bg.0.lighter(0.3);
-            border.0 = border.0.lighter(0.3);
+            border.set_all(Color::WHITE);
             return;
         }
     }
 }
 
 fn on_unselected(
-    trigger: Trigger<KeySelected>,
+    trigger: On<KeySelected>,
     unselected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
     theme: Res<VirtualKeyboardTheme>,
 ) {
     for (e, mut bg, mut border) in unselected_keys {
-        if e == trigger.target() {
+        if e == trigger.entity {
             bg.0 = theme.button_color;
-            border.0 = theme.border_color;
+            border.set_all(theme.border_color);
             return;
         }
     }
@@ -627,7 +632,7 @@ fn gamepad_system(
     mut selecting_key: ResMut<SelectingKey>,
     keys: Res<VirtualKeysList>,
     key_entities: Res<VirtualKeyEntities>,
-    mut event: EventWriter<KeyboardInput>,
+    mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
 ) {
     if keys.keys.is_empty() || selecting_key.row >= keys.keys.len() {
@@ -659,7 +664,7 @@ fn gamepad_system(
         } else if gamepad.just_pressed(GamepadButton::South) {
             if selecting_key.row < key_entities.len() && selecting_key.col < key_entities[selecting_key.row].len() {
                 let e = key_entities[selecting_key.row][selecting_key.col];
-                commands.trigger_targets(KeyPressed, e);
+                commands.trigger(KeyPressed { entity: e });
             }
         } else if gamepad.just_pressed(GamepadButton::East) {
             if let Ok(window) = windows.single() {
@@ -676,19 +681,19 @@ fn gamepad_system(
             selecting_key.row = 0;
         } else if gamepad.any_just_released(GamepadButton::all()) {
             let e = key_entities[selecting_key.row][selecting_key.col];
-            commands.trigger_targets(KeyReleased, e);
+            commands.trigger(KeyReleased { entity: e });
         }
     }
 
     if select_changed {
         if selecting_key.row < key_entities.len() && selecting_key.col < key_entities[selecting_key.row].len() {
             let new_select = key_entities[selecting_key.row][selecting_key.col];
-            commands.trigger_targets(KeySelected, new_select);
+            commands.trigger(KeySelected { entity: new_select });
         }
 
         if old_select.0 < key_entities.len() && old_select.1 < key_entities[old_select.0].len() {
             let old_select = key_entities[old_select.0][old_select.1];
-            commands.trigger_targets(KeyUnselected, old_select);
+            commands.trigger(KeyUnselected { entity: old_select });
         }
     }
 }

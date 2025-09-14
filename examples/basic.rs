@@ -76,7 +76,7 @@ fn setup(mut commands: Commands, mut config: ResMut<TextEditConfig>) {
         });
 }
 
-fn get_result(trigger: Trigger<TextEdited>, mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>) {
+fn get_result(trigger: On<TextEdited>, mut result_box: Query<&mut Text, (With<Result>, Without<TextEditable>)>) {
     let text = trigger.text.as_str();
     if let Ok(mut result_box) = result_box.single_mut() {
         **result_box = format!("Just input: {}", text);

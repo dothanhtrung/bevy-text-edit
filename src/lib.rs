@@ -79,7 +79,7 @@
 //! use bevy_text_edit::TextEdited;
 //!
 //! fn get_text(
-//!     mut event: EventReader<TextEdited>,
+//!     mut event: MessageReader<TextEdited>,
 //! ) {
 //!     for e in event.read() {
 //!         info!("Entity {}: {}", e.entity, e.text);
@@ -99,10 +99,10 @@ use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
 #[cfg(feature = "log")]
 use bevy::log::error;
-use bevy::prelude::{in_state, IntoScheduleConfigs, KeyCode, States};
 use bevy::prelude::{
-    Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, Event, EventReader, EventWriter,
-    GlobalTransform, MouseButton, Query, Res, ResMut, Resource, Text, Time, Timer, TimerMode, Touches, With, Without,
+    in_state, Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EntityEvent,
+    GlobalTransform, IntoScheduleConfigs, KeyCode, Message, MessageReader, MessageWriter, MouseButton, Query, Res, ResMut,
+    Resource, States, Text, Time, Timer, TimerMode, Touches, With, Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;
@@ -140,8 +140,8 @@ where
             .insert_resource(TextEditConfig::new())
             .insert_resource(DisplayTextCursor(DEFAULT_CURSOR))
             .insert_resource(BlinkInterval(Timer::from_seconds(BLINK_INTERVAL, TimerMode::Repeating)))
-            .add_event::<TextFocusChanged>()
-            .add_event::<TextEdited>();
+            .add_message::<TextFocusChanged>()
+            .add_message::<TextEdited>();
 
         #[cfg(feature = "clipboard")]
         app.insert_resource(ClipboardMng::new());
@@ -199,7 +199,7 @@ pub struct DisplayTextCursor(char);
 pub struct BlinkInterval(Timer);
 
 /// Event when text is focused
-#[derive(Event)]
+#[derive(Message)]
 pub enum TextFocusChanged {
     Show(f32),
     Hide,
@@ -227,7 +227,7 @@ pub struct TextEditFocus;
 /// }
 /// ```
 #[derive(Component)]
-#[require(Interaction, Text)]
+#[require(Interaction, Text, GlobalTransform)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
     pub filter_out: Vec<String>,
@@ -257,7 +257,7 @@ impl Default for TextEditable {
     }
 }
 
-#[derive(Event, Clone)]
+#[derive(Message, EntityEvent, Clone)]
 pub struct TextEdited {
     pub text: String,
     pub entity: Entity,
@@ -319,7 +319,7 @@ fn unfocus_text_box(
     commands: &mut Commands,
     text_focus: &mut Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     ignore_entity: Option<Entity>,
-    text_edited_event: &mut EventWriter<TextEdited>,
+    text_edited_event: &mut MessageWriter<TextEdited>,
 ) {
     for (e, cursor, mut text, text_editable) in text_focus.iter_mut() {
         if ignore_entity.is_none() || e != ignore_entity.unwrap() {
@@ -338,7 +338,7 @@ fn unfocus_text_box(
                 entity: e,
             };
             text_edited_event.write(text_edited.clone());
-            commands.trigger_targets(text_edited, e);
+            commands.trigger(text_edited);
         }
     }
 }
@@ -379,9 +379,9 @@ pub fn listen_changing_focus(
         ),
     >,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
-    mut text_edited_event: EventWriter<TextEdited>,
-    mut focus_event: EventWriter<TextFocusChanged>,
-    mut events: EventReader<KeyboardInput>,
+    mut text_edited_event: MessageWriter<TextEdited>,
+    mut focus_event: MessageWriter<TextFocusChanged>,
+    mut events: MessageReader<KeyboardInput>,
     touches: Res<Touches>,
 ) {
     let mut unfocus_key_pressed = false;
@@ -428,7 +428,7 @@ pub fn listen_changing_focus(
 }
 
 fn listen_keyboard_input(
-    mut events: EventReader<KeyboardInput>,
+    mut events: MessageReader<KeyboardInput>,
     mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
     #[cfg(feature = "clipboard")] mut clipboard_mng: ResMut<ClipboardMng>,

@@ -1,9 +1,9 @@
 use crate::{TextEditable, TextEdited};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::{
-    default, AlignItems, Button, ChildOf, Click, Color, Commands, Component, Deref, DerefMut, Entity, Event,
-    JustifyContent, JustifyItems, JustifyText, Node, Pointer, Query, Text, TextColor, TextFont, TextLayout, Trigger,
-    UiRect, Val,
+    default, AlignItems, Button, ChildOf, Click, Color, Commands, Component, Deref, DerefMut, Entity, EntityEvent,
+    Justify, JustifyContent, JustifyItems, Node, On, Pointer, Query, Text, TextColor, TextFont, TextLayout, UiRect,
+    Val,
 };
 use bevy::ui::{AlignContent, BackgroundColor, FlexDirection};
 use bevy_support_misc::ui::button::ButtonColorEffect;
@@ -31,8 +31,11 @@ pub struct NumberInputSetting {
     pub height: Val,
 }
 
-#[derive(Event, Deref, DerefMut)]
-pub struct NumberInputChanged(pub i64);
+#[derive(EntityEvent)]
+pub struct NumberInputChanged {
+    pub number: i64,
+    pub entity: Entity,
+}
 
 pub fn spawn_number_input_text(
     builder: &mut RelatedSpawnerCommands<ChildOf>,
@@ -74,7 +77,7 @@ pub fn spawn_number_input_text(
                                     width: Val::Percent(100.),
                                     ..default()
                                 },
-                                TextLayout::new_with_justify(JustifyText::Right),
+                                TextLayout::new_with_justify(Justify::Right),
                                 Text::new(number.to_string()),
                                 TextEditable {
                                     filter_in: vec!["[0-9.-]".to_string()],
@@ -144,12 +147,12 @@ pub fn spawn_number_input_text(
 }
 
 fn change_value(
-    trigger: Trigger<TextEdited>,
+    trigger: On<TextEdited>,
     mut query: Query<(&mut Text, &NumberInput)>,
     parent_query: Query<&ChildOf>,
     commands: Commands,
 ) {
-    let e = trigger.target();
+    let e = trigger.entity;
     let edited_text = trigger.text.clone();
     if let Ok((mut text, setting)) = query.get_mut(e) {
         if let Ok(num) = edited_text.parse::<i64>() {
@@ -162,13 +165,13 @@ fn change_value(
 }
 
 fn increase(
-    trigger: Trigger<Pointer<Click>>,
+    trigger: On<Pointer<Click>>,
     mut text_query: Query<(&mut Text, &NumberInput)>,
     button_query: Query<&NumberButton>,
     parent_query: Query<&ChildOf>,
     commands: Commands,
 ) {
-    if let Ok(NumberButton(Some(e))) = button_query.get(trigger.target()) {
+    if let Ok(NumberButton(Some(e))) = button_query.get(trigger.entity) {
         if let Ok((mut text, setting)) = text_query.get_mut(*e) {
             if let Ok(num) = text.parse::<i64>() {
                 let new_num = min(setting.max, num + 1);
@@ -181,13 +184,13 @@ fn increase(
 }
 
 fn reduce(
-    trigger: Trigger<Pointer<Click>>,
+    trigger: On<Pointer<Click>>,
     mut text_query: Query<(&mut Text, &NumberInput)>,
     button_query: Query<&NumberButton>,
     parent_query: Query<&ChildOf>,
     commands: Commands,
 ) {
-    if let Ok(NumberButton(Some(e))) = button_query.get(trigger.target()) {
+    if let Ok(NumberButton(Some(e))) = button_query.get(trigger.entity) {
         if let Ok((mut text, setting)) = text_query.get_mut(*e) {
             if let Ok(num) = text.parse::<i64>() {
                 let new_num = max(setting.min, num - 1);
@@ -202,7 +205,10 @@ fn reduce(
 fn number_input_notify(mut commands: Commands, parent_query: Query<&ChildOf>, e: Entity, new_num: i64) {
     if let Ok(parent) = parent_query.get(e) {
         if let Ok(grand_parent) = parent_query.get(parent.parent()) {
-            commands.trigger_targets(NumberInputChanged(new_num), grand_parent.parent());
+            commands.trigger(NumberInputChanged {
+                number: new_num,
+                entity: grand_parent.parent(),
+            });
         }
     }
 }
