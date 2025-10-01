@@ -28,8 +28,7 @@ variables:
 test:
   stage: test
   script:
-    - cargo install cargo-sweep
-    - cargo sweep -t 60 || true
+    - /usr/local/cargo/bin/cargo-sweep sweep -t 60 || true
     - cargo test --tests
     - cargo test --examples
     - cargo test --features=experimental --tests
