@@ -12,7 +12,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            resolution: WindowResolution::new(400., 300.),
+            resolution: WindowResolution::new(400, 300),
             ..default()
         }),
         ..default()
@@ -59,8 +59,8 @@ fn setup(mut commands: Commands) {
 }
 
 #[cfg(feature = "experimental")]
-fn get_result(trigger: Trigger<NumberInputChanged>, mut query: Query<&mut Text, With<Result>>) {
+fn get_result(trigger: On<NumberInputChanged>, mut query: Query<&mut Text, With<Result>>) {
     for mut text in query.iter_mut() {
-        **text = format!("Result: {}", trigger.0);
+        **text = format!("Result: {}", trigger.number);
     }
 }

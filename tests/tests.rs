@@ -137,8 +137,8 @@ fn max_length() {
 
 fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, Entity, Entity) {
     let mut app = App::new();
-    let mut text1 = Entity::from_raw(0);
-    let mut text2 = Entity::from_raw(0);
+    let mut text1 = Entity::PLACEHOLDER;
+    let mut text2 = Entity::PLACEHOLDER;
 
     app.add_plugins((
         WindowPlugin::default(),
@@ -180,7 +180,7 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
     (app, text1, text2)
 }
 
-fn get_text(trigger: Trigger<TextEdited>) {
+fn get_text(trigger: On<TextEdited>) {
     info!("{}", trigger.text);
 }
 
@@ -190,7 +190,7 @@ fn send_key(world: &mut World, key_code: KeyCode, logical_key: Key) {
         return;
     };
 
-    world.resource_mut::<Events<KeyboardInput>>().send(KeyboardInput {
+    world.resource_mut::<Messages<KeyboardInput>>().write(KeyboardInput {
         key_code,
         logical_key,
         state: ButtonState::Pressed,

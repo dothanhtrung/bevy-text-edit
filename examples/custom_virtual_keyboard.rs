@@ -23,7 +23,7 @@ fn setup(mut commands: Commands, mut config: ResMut<TextEditConfig>) {
 }
 
 fn customize_virtual_keyboard(
-    mut virtual_keyboard_changed: EventWriter<VirtualKeyboardChanged>,
+    mut virtual_keyboard_changed: MessageWriter<VirtualKeyboardChanged>,
     mut theme: ResMut<VirtualKeyboardTheme>,
     mut keys_list: ResMut<VirtualKeysList>,
 ) {
