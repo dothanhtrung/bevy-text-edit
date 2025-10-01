@@ -1,6 +1,6 @@
 [package]
 name = "bevy_text_edit"
-version = "0.7.0-rc.0"
+version = "0.7.0"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -11,14 +11,13 @@ exclude = ["assets", "examples", "tests", ".cargo"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = "0.17.0-rc", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking", "bevy_ui_picking_backend"], default-features = false }
+bevy = { version = "0.17", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking", "bevy_ui_picking_backend"], default-features = false }
 regex-lite = { version = "0.1" }
-bevy_support_misc = { version = "0.6.0-rc", default-features = false }
-bevy_auto_timer = "0.2.0-rc"
+bevy_auto_timer = "0.2"
 arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"], optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.17.0-rc", features = ["dynamic_linking"] }
+bevy = { version = "0.17", features = ["dynamic_linking"] }
 
 [features]
 default = ["clipboard"]

@@ -6,7 +6,6 @@ use bevy::prelude::{
     Val,
 };
 use bevy::ui::{AlignContent, BackgroundColor, FlexDirection};
-use bevy_support_misc::ui::button::ButtonColorEffect;
 use std::cmp::{max, min};
 
 #[derive(Component)]
@@ -108,7 +107,6 @@ pub fn spawn_number_input_text(
                 .with_children(|builder| {
                     builder
                         .spawn((
-                            ButtonColorEffect::default(),
                             NumberButton(id),
                             BackgroundColor::from(setting.btn_bg),
                             Node {
@@ -126,7 +124,6 @@ pub fn spawn_number_input_text(
                         .observe(increase);
                     builder
                         .spawn((
-                            ButtonColorEffect::default(),
                             NumberButton(id),
                             BackgroundColor::from(setting.btn_bg),
                             Node {

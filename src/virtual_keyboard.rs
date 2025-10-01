@@ -16,8 +16,6 @@ use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyC
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
 use bevy_auto_timer::{ActionOnFinish, AutoTimer, AutoTimerFinished, AutoTimerPlugin};
-use bevy_support_misc::ui::button::{ButtonColorEffect, ButtonTransformEffect};
-use bevy_support_misc::ui::UiSupportPlugin;
 use std::time::Duration;
 
 macro_rules! vk_plugin_systems {
@@ -58,7 +56,7 @@ where
     T: States,
 {
     fn build(&self, app: &mut App) {
-        app.add_plugins((UiSupportPlugin, AutoTimerPlugin::new(self.states.clone())))
+        app.add_plugins(AutoTimerPlugin::new(self.states.clone()))
             .insert_resource(VirtualKeyboardTheme::new())
             .insert_resource(VirtualKeysList::default())
             .insert_resource(VirtualKeyEntities::default())
@@ -425,8 +423,6 @@ fn spawn_key(
     builder
         .spawn((
             VirtualKey { key_code, logical_key },
-            ButtonTransformEffect::default(),
-            ButtonColorEffect::default(),
             Node {
                 width: theme.key_size_1u * key_size,
                 margin: UiRect::horizontal(theme.key_margin),
