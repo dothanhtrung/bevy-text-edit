@@ -1,6 +1,12 @@
 use bevy::color::palettes::tailwind::ZINC_800;
 use bevy::prelude::*;
-use bevy_text_edit::{TextEditConfig, TextEditFocus, TextEditPlugin, TextEditable, TextEdited};
+use bevy_text_edit::{
+    TextEditConfig,
+    TextEditFocus,
+    TextEditPlugin,
+    TextEditable,
+    TextEdited,
+};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
 enum GameState {

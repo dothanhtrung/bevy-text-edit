@@ -91,18 +91,56 @@
 pub mod experimental;
 pub mod virtual_keyboard;
 
-use crate::virtual_keyboard::{VirtualKey, VirtualKeyboard, VirtualKeyboardPlugin, VirtualKeyboardPos};
+use crate::virtual_keyboard::{
+    VirtualKey,
+    VirtualKeyboard,
+    VirtualKeyboardPlugin,
+    VirtualKeyboardPos,
+};
 #[cfg(feature = "clipboard")]
 use arboard::Clipboard;
-use bevy::app::{App, Plugin, Update};
-use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::app::{
+    App,
+    Plugin,
+    Update,
+};
+use bevy::input::keyboard::{
+    Key,
+    KeyboardInput,
+};
 use bevy::input::ButtonState;
 #[cfg(feature = "log")]
 use bevy::log::error;
 use bevy::prelude::{
-    in_state, Alpha, ButtonInput, Changed, Commands, Component, Deref, DerefMut, Entity, EntityEvent,
-    GlobalTransform, IntoScheduleConfigs, KeyCode, Message, MessageReader, MessageWriter, MouseButton, Query, Res, ResMut,
-    Resource, States, Text, Time, Timer, TimerMode, Touches, With, Without,
+    in_state,
+    Alpha,
+    ButtonInput,
+    Changed,
+    Commands,
+    Component,
+    Deref,
+    DerefMut,
+    Entity,
+    EntityEvent,
+    GlobalTransform,
+    IntoScheduleConfigs,
+    KeyCode,
+    Message,
+    MessageReader,
+    MessageWriter,
+    MouseButton,
+    Query,
+    Res,
+    ResMut,
+    Resource,
+    States,
+    Text,
+    Time,
+    Timer,
+    TimerMode,
+    Touches,
+    With,
+    Without,
 };
 use bevy::text::TextColor;
 use bevy::ui::Interaction;

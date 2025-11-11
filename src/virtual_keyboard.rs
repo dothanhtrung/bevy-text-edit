@@ -1,21 +1,88 @@
 // Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
 
-use crate::{TextEditConfig, TextFocusChanged};
-use bevy::app::{App, Plugin, Startup};
+use crate::{
+    TextEditConfig,
+    TextFocusChanged,
+};
+use bevy::app::{
+    App,
+    Plugin,
+    Startup,
+};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
-use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::input::keyboard::{
+    Key,
+    KeyboardInput,
+};
 use bevy::input::ButtonState;
 use bevy::prelude::{
-    in_state, on_message, AlignContent, AlignSelf, BorderColor, ChildOf, Color, Commands, Component, Deref, DerefMut,
-    Entity, EntityEvent, Gamepad, GamepadButton, Handle, Image, ImageNode, Interaction, IntoScheduleConfigs,
-    JustifyItems, KeyCode, Luminance, Message, MessageReader, MessageWriter, Node, On, Out, Pointer, Press, Query, Release,
-    Res, ResMut, Resource, Single, States, Text, TextColor, TextFont, Timer, TimerMode, Update, Visibility, Window,
-    With, ZIndex,
+    in_state,
+    on_message,
+    AlignContent,
+    AlignSelf,
+    BorderColor,
+    ChildOf,
+    Color,
+    Commands,
+    Component,
+    Deref,
+    DerefMut,
+    Entity,
+    EntityEvent,
+    Gamepad,
+    GamepadButton,
+    Handle,
+    Image,
+    ImageNode,
+    Interaction,
+    IntoScheduleConfigs,
+    JustifyItems,
+    KeyCode,
+    Luminance,
+    Message,
+    MessageReader,
+    MessageWriter,
+    Node,
+    On,
+    Out,
+    Pointer,
+    Press,
+    Query,
+    Release,
+    Res,
+    ResMut,
+    Resource,
+    Single,
+    States,
+    Text,
+    TextColor,
+    TextFont,
+    Timer,
+    TimerMode,
+    Update,
+    Visibility,
+    Window,
+    With,
+    ZIndex,
 };
-use bevy::ui::{AlignItems, BackgroundColor, FlexDirection, FocusPolicy, JustifyContent, JustifySelf, UiRect, Val};
+use bevy::ui::{
+    AlignItems,
+    BackgroundColor,
+    FlexDirection,
+    FocusPolicy,
+    JustifyContent,
+    JustifySelf,
+    UiRect,
+    Val,
+};
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
-use bevy_auto_timer::{ActionOnFinish, AutoTimer, AutoTimerFinished, AutoTimerPlugin};
+use bevy_auto_timer::{
+    ActionOnFinish,
+    AutoTimer,
+    AutoTimerFinished,
+    AutoTimerPlugin,
+};
 use std::time::Duration;
 
 macro_rules! vk_plugin_systems {

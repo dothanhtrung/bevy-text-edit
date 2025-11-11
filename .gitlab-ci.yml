@@ -1,7 +1,7 @@
 image: "dothanhtrung/bevy-dev:latest"
 
 before_script:
-  - sed -i '/^target-dir =/d' .cargo/config.toml
+  - rm -f .cargo/config.toml
 
 cache: &global_cache
   key: cargo_cache

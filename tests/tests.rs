@@ -1,8 +1,19 @@
-use bevy::input::keyboard::{Key, KeyboardInput};
-use bevy::input::{ButtonState, InputPlugin};
+use bevy::input::keyboard::{
+    Key,
+    KeyboardInput,
+};
+use bevy::input::{
+    ButtonState,
+    InputPlugin,
+};
 use bevy::prelude::*;
 use bevy::time::TimePlugin;
-use bevy_text_edit::{TextEditFocus, TextEditPluginAnyState, TextEditable, TextEdited};
+use bevy_text_edit::{
+    TextEditFocus,
+    TextEditPluginAnyState,
+    TextEditable,
+    TextEdited,
+};
 
 const TEXT_1: &str = "Text_Section1";
 const TEXT_2: &str = "Text_Section2";

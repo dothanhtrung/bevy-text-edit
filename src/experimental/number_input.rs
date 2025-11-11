@@ -1,12 +1,44 @@
-use crate::{TextEditable, TextEdited};
+use crate::{
+    TextEditable,
+    TextEdited,
+};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::{
-    default, AlignItems, Button, ChildOf, Click, Color, Commands, Component, Deref, DerefMut, Entity, EntityEvent,
-    Justify, JustifyContent, JustifyItems, Node, On, Pointer, Query, Text, TextColor, TextFont, TextLayout, UiRect,
+    default,
+    AlignItems,
+    Button,
+    ChildOf,
+    Click,
+    Color,
+    Commands,
+    Component,
+    Deref,
+    DerefMut,
+    Entity,
+    EntityEvent,
+    Justify,
+    JustifyContent,
+    JustifyItems,
+    Node,
+    On,
+    Pointer,
+    Query,
+    Text,
+    TextColor,
+    TextFont,
+    TextLayout,
+    UiRect,
     Val,
 };
-use bevy::ui::{AlignContent, BackgroundColor, FlexDirection};
-use std::cmp::{max, min};
+use bevy::ui::{
+    AlignContent,
+    BackgroundColor,
+    FlexDirection,
+};
+use std::cmp::{
+    max,
+    min,
+};
 
 #[derive(Component)]
 struct NumberInput {

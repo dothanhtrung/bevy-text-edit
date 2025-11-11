@@ -1,11 +1,18 @@
 //! This is experimental, you don't need to care about this
 
 #[cfg(feature = "experimental")]
-use bevy::color::palettes::tailwind::{NEUTRAL_600, ZINC_800};
+use bevy::color::palettes::tailwind::{
+    NEUTRAL_600,
+    ZINC_800,
+};
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
 #[cfg(feature = "experimental")]
-use bevy_text_edit::experimental::number_input::{spawn_number_input_text, NumberInputChanged, NumberInputSetting};
+use bevy_text_edit::experimental::number_input::{
+    spawn_number_input_text,
+    NumberInputChanged,
+    NumberInputSetting,
+};
 use bevy_text_edit::TextEditPluginAnyState;
 
 fn main() {

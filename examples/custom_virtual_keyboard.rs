@@ -1,6 +1,14 @@
 use bevy::prelude::*;
-use bevy_text_edit::virtual_keyboard::{VirtualKeyboardChanged, VirtualKeyboardTheme, VirtualKeysList};
-use bevy_text_edit::{TextEditConfig, TextEditPluginAnyState, TextEditable};
+use bevy_text_edit::virtual_keyboard::{
+    VirtualKeyboardChanged,
+    VirtualKeyboardTheme,
+    VirtualKeysList,
+};
+use bevy_text_edit::{
+    TextEditConfig,
+    TextEditPluginAnyState,
+    TextEditable,
+};
 
 fn main() {
     App::new()
