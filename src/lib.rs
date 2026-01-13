@@ -1,5 +1,3 @@
-// Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
-
 //! ### Plugin
 //!
 //! Add plugin `TextEditPlugin` to the app and define which states it will run in:

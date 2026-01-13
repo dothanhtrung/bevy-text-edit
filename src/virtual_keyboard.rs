@@ -1,5 +1,3 @@
-// Copyright 2024,2025 Trung Do <dothanhtrung@pm.me>
-
 use crate::{
     TextEditConfig,
     TextFocusChanged,
