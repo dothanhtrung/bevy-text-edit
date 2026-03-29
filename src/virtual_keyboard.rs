@@ -13,6 +13,7 @@ use bevy::input::keyboard::{
     KeyboardInput,
 };
 use bevy::input::ButtonState;
+use bevy::math::Vec2;
 use bevy::prelude::{
     in_state,
     on_message,
@@ -57,6 +58,7 @@ use bevy::prelude::{
     TextFont,
     Timer,
     TimerMode,
+    UiTransform,
     Update,
     Visibility,
     Window,
@@ -93,11 +95,14 @@ macro_rules! vk_plugin_systems {
     };
 }
 
-const KEY_1U: f32 = 5.5; // Percent
-const KEY_MARGIN: f32 = 0.3; // Percent
-const ROW_MARGIN: f32 = 0.4; // Percent
+const KEY_1U: f32 = 5.9; // Percent
+const KEY_MARGIN: f32 = 0.1; // Percent
+const ROW_MARGIN: f32 = 0.2; // Percent
 const WIDTH: f32 = 90.; // Percent
 const HEIGHT: f32 = 30.; // Percent
+
+const PRESS_SCALE: f32 = 1.3;
+const HOVER_SCALE: f32 = 1.1;
 
 pub(crate) struct VirtualKeyboardPlugin<T>
 where
@@ -526,7 +531,7 @@ fn spawn_key(
 
 fn on_pointer_press(
     trigger: On<Pointer<Press>>,
-    mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
+    mut keys: Query<(&VirtualKey, &mut AutoTimer, &mut UiTransform)>,
     mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut virtual_keyboard: Single<&mut VirtualKeyboard>,
@@ -546,7 +551,7 @@ fn on_pointer_press(
 
 fn on_key_press(
     trigger: On<KeyPressed>,
-    mut keys: Query<(&VirtualKey, &mut AutoTimer)>,
+    mut keys: Query<(&VirtualKey, &mut AutoTimer, &mut UiTransform)>,
     mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     mut virtual_keyboard: Single<&mut VirtualKeyboard>,
@@ -566,7 +571,7 @@ fn on_key_press(
 
 fn on_press(
     target: Entity,
-    keys: &mut Query<(&VirtualKey, &mut AutoTimer)>,
+    keys: &mut Query<(&VirtualKey, &mut AutoTimer, &mut UiTransform)>,
     event: &mut MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
     virtual_keyboard: &mut Single<&mut VirtualKeyboard>,
@@ -574,15 +579,15 @@ fn on_press(
     config: Res<TextEditConfig>,
 ) {
     // Stop repeat timer of all other keys
-    for (_, mut timer) in keys.iter_mut() {
+    for (_, mut timer, _) in keys.iter_mut() {
         timer.timer.pause();
     }
 
     if let Ok(window) = windows.single() {
-        if let Ok((key, mut timer)) = keys.get_mut(target) {
+        if let Ok((key, mut timer, mut transform)) = keys.get_mut(target) {
+            transform.scale = Vec2::splat(PRESS_SCALE);
             if key.logical_key.0 == Key::Shift {
                 virtual_keyboard.show_alt = !virtual_keyboard.show_alt;
-
                 for (mut text, label) in text.iter_mut() {
                     **text = if virtual_keyboard.show_alt { label.alt.clone() } else { label.main.clone() };
                 }
@@ -609,14 +614,22 @@ fn on_press(
     }
 }
 
-fn on_pointer_release(trigger: On<Pointer<Release>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
+fn on_pointer_release(
+    trigger: On<Pointer<Release>>,
+    mut repeated_timer: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
+) {
+    if let Ok((mut timer, mut transform)) = repeated_timer.get_mut(trigger.entity) {
+        transform.scale = Vec2::ONE;
         timer.timer.pause();
     }
 }
 
-fn on_key_release(trigger: On<KeyReleased>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
+fn on_key_release(
+    trigger: On<KeyReleased>,
+    mut repeated_timer: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
+) {
+    if let Ok((mut timer, mut transform)) = repeated_timer.get_mut(trigger.entity) {
+        transform.scale = Vec2::ONE;
         timer.timer.pause();
     }
 }

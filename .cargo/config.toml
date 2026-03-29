@@ -1,5 +1,4 @@
 [build]
-#rustc-wrapper = "sccache"
 target-dir = "../../target"
 
 [target.x86_64-unknown-linux-gnu]
