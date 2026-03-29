@@ -44,6 +44,7 @@ use bevy::prelude::{
     Node,
     On,
     Out,
+    Over,
     Pointer,
     Press,
     Query,
@@ -522,6 +523,7 @@ fn spawn_key(
         .observe(on_key_press)
         .observe(on_pointer_release)
         .observe(on_key_release)
+        .observe(on_hover)
         .observe(on_out)
         .observe(on_repeat)
         .observe(on_selected)
@@ -616,9 +618,9 @@ fn on_press(
 
 fn on_pointer_release(
     trigger: On<Pointer<Release>>,
-    mut repeated_timer: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
+    mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
 ) {
-    if let Ok((mut timer, mut transform)) = repeated_timer.get_mut(trigger.entity) {
+    if let Ok((mut timer, mut transform)) = repeated_keys.get_mut(trigger.entity) {
         transform.scale = Vec2::ONE;
         timer.timer.pause();
     }
@@ -626,17 +628,24 @@ fn on_pointer_release(
 
 fn on_key_release(
     trigger: On<KeyReleased>,
-    mut repeated_timer: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
+    mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
 ) {
-    if let Ok((mut timer, mut transform)) = repeated_timer.get_mut(trigger.entity) {
+    if let Ok((mut timer, mut transform)) = repeated_keys.get_mut(trigger.entity) {
         transform.scale = Vec2::ONE;
         timer.timer.pause();
     }
 }
 
-fn on_out(trigger: On<Pointer<Out>>, mut repeated_timer: Query<&mut AutoTimer, With<VirtualKey>>) {
-    if let Ok(mut timer) = repeated_timer.get_mut(trigger.entity) {
+fn on_hover(trigger: On<Pointer<Over>>, mut keys: Query<&mut UiTransform, With<VirtualKey>>) {
+    if let Ok(mut transform) = keys.get_mut(trigger.entity) {
+        transform.scale = Vec2::splat(HOVER_SCALE);
+    }
+}
+
+fn on_out(trigger: On<Pointer<Out>>, mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>) {
+    if let Ok((mut timer, mut transform)) = repeated_keys.get_mut(trigger.entity) {
         timer.timer.pause();
+        transform.scale = Vec2::ONE;
     }
 }
 
@@ -675,28 +684,26 @@ fn on_repeat(
 
 fn on_selected(
     trigger: On<KeySelected>,
-    selected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
+    mut selected_keys: Query<(&mut BackgroundColor, &mut BorderColor, &mut UiTransform), With<VirtualKey>>,
 ) {
-    for (e, mut bg, mut border) in selected_keys {
-        if e == trigger.entity {
-            bg.0 = bg.0.lighter(0.3);
-            border.set_all(Color::WHITE);
-            return;
-        }
+    if let Ok((mut bg, mut border, mut transform)) = selected_keys.get_mut(trigger.entity) {
+        transform.scale = Vec2::splat(HOVER_SCALE);
+        bg.0 = bg.0.lighter(0.3);
+        border.set_all(Color::WHITE);
+        return;
     }
 }
 
 fn on_unselected(
     trigger: On<KeySelected>,
-    unselected_keys: Query<(Entity, &mut BackgroundColor, &mut BorderColor), With<VirtualKey>>,
+    mut unselected_keys: Query<(&mut BackgroundColor, &mut BorderColor, &mut UiTransform), With<VirtualKey>>,
     theme: Res<VirtualKeyboardTheme>,
 ) {
-    for (e, mut bg, mut border) in unselected_keys {
-        if e == trigger.entity {
-            bg.0 = theme.button_color;
-            border.set_all(theme.border_color);
-            return;
-        }
+    if let Ok((mut bg, mut border, mut transform)) = unselected_keys.get_mut(trigger.entity) {
+        transform.scale = Vec2::ONE;
+        bg.0 = theme.button_color;
+        border.set_all(theme.border_color);
+        return;
     }
 }
 
