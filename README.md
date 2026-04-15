@@ -5,10 +5,10 @@ bevy_text_edit
 
 [![crates.io](https://img.shields.io/crates/v/bevy_text_edit)](https://crates.io/crates/bevy_text_edit)
 [![docs.rs](https://docs.rs/bevy_text_edit/badge.svg)](https://docs.rs/bevy_text_edit)
-[![dependency status](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/kimtinh/bevy-text-edit)
-[![pipeline status](https://gitlab.com/kimtinh/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/kimtinh/bevy-text-edit/-/commits/master)
+[![dependency status](https://deps.rs/repo/gitlab/245project/bevy-plugin/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/245project/bevy-plugin/bevy-text-edit)
+[![pipeline status](https://gitlab.com/245project/bevy-plugin/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/245project/bevy-plugin/bevy-text-edit/-/commits/master)
 
-[![Gitlab](https://img.shields.io/badge/gitlab-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/kimtinh/bevy-text-edit)
+[![Gitlab](https://img.shields.io/badge/gitlab-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/245project/bevy-plugin/bevy-text-edit)
 [![Github](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dothanhtrung/bevy-text-edit)
 
 ![](screenshots/text_edit.gif)
@@ -28,11 +28,8 @@ Features:
 * [x] Paste with `Ctrl+v`.
 * [x] In-game virtual keyboard.
   * [x] Repeated key.
-
-Not support:
-* [ ] IME.
-* In-game virtual keyboard.
   * [ ] Multi-language.
+* [ ] IME.
 * [ ] Select text.
 * [ ] Copy.
 
