@@ -19,7 +19,13 @@ struct Result;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins) // Since bevy 0.14, plugin needs to be added before init_state
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                ime_enabled: true,
+                ..default()
+            }),
+            ..default()
+        })) // Since bevy 0.14, plugin needs to be added before init_state
         .init_state::<GameState>()
         // Add the plugin with state or `TextEditPluginAnyState::any()`
         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))

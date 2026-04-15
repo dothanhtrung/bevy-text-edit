@@ -121,6 +121,7 @@ use bevy::prelude::{
     Entity,
     EntityEvent,
     GlobalTransform,
+    Ime,
     IntoScheduleConfigs,
     KeyCode,
     Message,
@@ -465,21 +466,43 @@ pub fn listen_changing_focus(
 
 fn listen_keyboard_input(
     mut events: MessageReader<KeyboardInput>,
+    mut ime_reader: MessageReader<Ime>,
     mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
     #[cfg(feature = "clipboard")] mut clipboard_mng: ResMut<ClipboardMng>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let is_ctrl_pressed = keyboard_input.pressed(KeyCode::ControlRight) || keyboard_input.pressed(KeyCode::ControlLeft);
+    for (mut text, mut cursor, texteditable) in edit_text.iter_mut() {
+        let ignore_list = &texteditable.filter_out;
+        let allow_list = &texteditable.filter_in;
+        for ime in ime_reader.read() {
+            match ime {
+                Ime::Preedit { .. } => {}
+                Ime::Commit { value, .. } => {
+                    let mut append_text = String::new();
+                    for char in value.chars() {
+                        if !is_ignored(ignore_list, allow_list, char.to_string())
+                            && (texteditable.max_length <= 0
+                                || (text.len() + append_text.len()) < texteditable.max_length)
+                        {
+                            append_text.push(char);
+                        }
+                    }
 
-    for event in events.read() {
-        if event.state == ButtonState::Released {
-            continue;
+                    text.insert_str(cursor.pos, append_text.as_str());
+                    cursor.pos += append_text.len();
+                }
+                Ime::Enabled { .. } => {}
+                Ime::Disabled { .. } => {}
+            }
         }
 
-        for (mut text, mut cursor, texteditable) in edit_text.iter_mut() {
-            let ignore_list = &texteditable.filter_out;
-            let allow_list = &texteditable.filter_in;
+        for event in events.read() {
+            if event.state == ButtonState::Released {
+                continue;
+            }
+
             match &event.logical_key {
                 Key::Space => {
                     if is_ignored(ignore_list, allow_list, " ".into())
