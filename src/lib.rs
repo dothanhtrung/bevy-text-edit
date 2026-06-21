@@ -483,7 +483,7 @@ fn listen_keyboard_input(
                     let mut append_text = String::new();
                     for char in value.chars() {
                         if !is_ignored(ignore_list, allow_list, char.to_string())
-                            && (texteditable.max_length <= 0
+                            && (texteditable.max_length == 0
                                 || (text.len() + append_text.len()) < texteditable.max_length)
                         {
                             append_text.push(char);

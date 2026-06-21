@@ -108,7 +108,7 @@ pub fn spawn_number_input_text(
                                     width: Val::Percent(100.),
                                     ..default()
                                 },
-                                TextLayout::new_with_justify(Justify::Right),
+                                TextLayout::justify(Justify::Right),
                                 Text::new(number.to_string()),
                                 TextEditable {
                                     filter_in: vec!["[0-9.-]".to_string()],

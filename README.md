@@ -5,7 +5,7 @@ bevy_text_edit
 
 [![crates.io](https://img.shields.io/crates/v/bevy_text_edit)](https://crates.io/crates/bevy_text_edit)
 [![docs.rs](https://docs.rs/bevy_text_edit/badge.svg)](https://docs.rs/bevy_text_edit)
-[![dependency status](https://deps.rs/repo/gitlab/245project/bevy-plugin/bevy-text-edit/status.svg)](https://deps.rs/repo/gitlab/245project/bevy-plugin/bevy-text-edit)
+[![dependency status](https://deps.rs/crate/bevy_text_edit/latest/status.svg)](https://deps.rs/crate/bevy_text_edit/latest)
 [![pipeline status](https://gitlab.com/245project/bevy-plugin/bevy-text-edit/badges/master/pipeline.svg)](https://gitlab.com/245project/bevy-plugin/bevy-text-edit/-/commits/master)
 
 [![Gitlab](https://img.shields.io/badge/gitlab-%23181717.svg?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/245project/bevy-plugin/bevy-text-edit)
@@ -145,6 +145,7 @@ Compatible Bevy Versions
 
 | bevy | bevy_text_edit |
 |------|----------------|
+| 0.19 | 0.8            |
 | 0.18 | 0.8            |
 | 0.17 | 0.7            |
 | 0.16 | 0.6            |

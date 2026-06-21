@@ -2,6 +2,7 @@ image: "dothanhtrung/bevy-dev:latest"
 
 before_script:
   - rm -f .cargo/config.toml
+  - rm -f rust-toolchain.toml
 
 cache: &global_cache
   key: cargo_cache
@@ -33,7 +34,7 @@ test:
     - cargo check --features=experimental --examples
     - cargo test --no-default-features --tests
     - cargo check --no-default-features --examples
-    - /usr/local/cargo/bin/cargo-sweep sweep -t 60 || true
+    - find . -mtime +30 -print -delete || true
   rules:
     - changes:
       - Cargo.toml
