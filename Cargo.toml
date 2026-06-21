@@ -1,19 +1,19 @@
 [package]
 name = "bevy_text_edit"
-version = "0.8.1"
+version = "0.9.0"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://gitlab.com/245project/bevy-plugin/bevy-text-edit"
 keywords = ["bevy"]
 description = "Bevy plugin for input text"
-exclude = ["assets", "examples", "tests", ".cargo"]
+exclude = ["assets", "examples", "tests", ".cargo", ".zed"]
 categories = ["game-development"]
 
 [dependencies]
 bevy = { version = ">=0.19", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking", "ui_picking"], default-features = false }
 regex-lite = { version = "0.1" }
-bevy_auto_timer = "0.3"
+bevy_auto_timer = ">=0.4"
 arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"], optional = true }
 
 [dev-dependencies]
