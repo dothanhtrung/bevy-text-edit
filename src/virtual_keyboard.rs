@@ -8,15 +8,19 @@ use bevy::app::{
     Startup,
 };
 use bevy::ecs::relationship::RelatedSpawnerCommands;
+use bevy::input::ButtonState;
 use bevy::input::keyboard::{
     Key,
     KeyboardInput,
 };
-use bevy::input::ButtonState;
 use bevy::math::Vec2;
+use bevy::picking::events::{
+    PointerOut,
+    PointerOver,
+    PointerPress,
+    PointerRelease,
+};
 use bevy::prelude::{
-    in_state,
-    on_message,
     AlignContent,
     AlignSelf,
     BorderColor,
@@ -43,12 +47,7 @@ use bevy::prelude::{
     MessageWriter,
     Node,
     On,
-    Out,
-    Over,
-    Pointer,
-    Press,
     Query,
-    Release,
     Res,
     ResMut,
     Resource,
@@ -65,6 +64,8 @@ use bevy::prelude::{
     Window,
     With,
     ZIndex,
+    in_state,
+    on_message,
 };
 use bevy::ui::{
     AlignItems,
@@ -532,7 +533,7 @@ fn spawn_key(
 }
 
 fn on_pointer_press(
-    trigger: On<Pointer<Press>>,
+    trigger: On<PointerPress>,
     mut keys: Query<(&VirtualKey, &mut AutoTimer, &mut UiTransform)>,
     mut event: MessageWriter<KeyboardInput>,
     windows: Query<Entity, With<PrimaryWindow>>,
@@ -617,7 +618,7 @@ fn on_press(
 }
 
 fn on_pointer_release(
-    trigger: On<Pointer<Release>>,
+    trigger: On<PointerRelease>,
     mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>,
 ) {
     if let Ok((mut timer, mut transform)) = repeated_keys.get_mut(trigger.entity) {
@@ -636,13 +637,13 @@ fn on_key_release(
     }
 }
 
-fn on_hover(trigger: On<Pointer<Over>>, mut keys: Query<&mut UiTransform, With<VirtualKey>>) {
+fn on_hover(trigger: On<PointerOver>, mut keys: Query<&mut UiTransform, With<VirtualKey>>) {
     if let Ok(mut transform) = keys.get_mut(trigger.entity) {
         transform.scale = Vec2::splat(HOVER_SCALE);
     }
 }
 
-fn on_out(trigger: On<Pointer<Out>>, mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>) {
+fn on_out(trigger: On<PointerOut>, mut repeated_keys: Query<(&mut AutoTimer, &mut UiTransform), With<VirtualKey>>) {
     if let Ok((mut timer, mut transform)) = repeated_keys.get_mut(trigger.entity) {
         timer.timer.pause();
         transform.scale = Vec2::ONE;

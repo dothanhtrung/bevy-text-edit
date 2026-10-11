@@ -3,12 +3,11 @@ use crate::{
     TextEdited,
 };
 use bevy::ecs::relationship::RelatedSpawnerCommands;
+use bevy::picking::events::PointerClick;
 use bevy::prelude::{
     default,
     AlignItems,
-    Button,
     ChildOf,
-    Click,
     Color,
     Commands,
     Component,
@@ -21,7 +20,6 @@ use bevy::prelude::{
     JustifyItems,
     Node,
     On,
-    Pointer,
     Query,
     Text,
     TextColor,
@@ -35,6 +33,7 @@ use bevy::ui::{
     BackgroundColor,
     FlexDirection,
 };
+use bevy::ui_widgets::Button;
 use std::cmp::{
     max,
     min,
@@ -194,7 +193,7 @@ fn change_value(
 }
 
 fn increase(
-    trigger: On<Pointer<Click>>,
+    trigger: On<PointerClick>,
     mut text_query: Query<(&mut Text, &NumberInput)>,
     button_query: Query<&NumberButton>,
     parent_query: Query<&ChildOf>,
@@ -213,7 +212,7 @@ fn increase(
 }
 
 fn reduce(
-    trigger: On<Pointer<Click>>,
+    trigger: On<PointerClick>,
     mut text_query: Query<(&mut Text, &NumberInput)>,
     button_query: Query<&NumberButton>,
     parent_query: Query<&ChildOf>,
