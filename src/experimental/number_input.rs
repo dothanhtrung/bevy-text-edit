@@ -5,7 +5,6 @@ use crate::{
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::picking::events::PointerClick;
 use bevy::prelude::{
-    default,
     AlignItems,
     ChildOf,
     Color,
@@ -27,6 +26,7 @@ use bevy::prelude::{
     TextLayout,
     UiRect,
     Val,
+    default,
 };
 use bevy::ui::{
     AlignContent,

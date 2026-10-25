@@ -101,16 +101,15 @@ use bevy::app::{
     Update,
 };
 use bevy::ecs::observer::On;
+use bevy::input::ButtonState;
 use bevy::input::keyboard::{
     Key,
     KeyboardInput,
 };
-use bevy::input::ButtonState;
 #[cfg(feature = "log")]
 use bevy::log::error;
 use bevy::picking::events::PointerPress;
 use bevy::prelude::{
-    in_state,
     Alpha,
     ButtonInput,
     Commands,
@@ -137,19 +136,14 @@ use bevy::prelude::{
     TimerMode,
     With,
     Without,
+    in_state,
 };
 use bevy::text::TextColor;
 use regex_lite::Regex;
 
 macro_rules! plugin_systems {
     ( ) => {
-        (
-            focus_text_box,
-            listen_keyboard_input,
-            blink_cursor,
-            display_placeholder,
-        )
-            .chain()
+        (focus_text_box, listen_keyboard_input, blink_cursor, display_placeholder).chain()
     };
 }
 
@@ -179,10 +173,12 @@ where
         app.insert_resource(ClipboardMng::new());
 
         if self.states.is_empty() {
-            app.add_systems(Update, plugin_systems!()).add_observer(listen_changing_focus);
+            app.add_systems(Update, plugin_systems!())
+                .add_observer(listen_changing_focus);
         } else {
             for state in &self.states {
-                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone()))).add_observer(listen_changing_focus);
+                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())))
+                    .add_observer(listen_changing_focus);
             }
         }
     }
@@ -408,7 +404,7 @@ pub fn listen_changing_focus(
     mut text_edited_event: MessageWriter<TextEdited>,
     mut focus_event: MessageWriter<TextFocusChanged>,
 ) {
-    for ( e, global_transform) in text_interactions.iter_mut() {
+    for (e, global_transform) in text_interactions.iter_mut() {
         if e == trigger.entity {
             focus_event.write(TextFocusChanged::Show(global_transform.translation().y));
 

@@ -7,13 +7,13 @@ use bevy::color::palettes::tailwind::{
 };
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
+use bevy_text_edit::TextEditPluginAnyState;
 #[cfg(feature = "experimental")]
 use bevy_text_edit::experimental::number_input::{
-    spawn_number_input_text,
     NumberInputChanged,
     NumberInputSetting,
+    spawn_number_input_text,
 };
-use bevy_text_edit::TextEditPluginAnyState;
 
 fn main() {
     let mut app = App::new();
