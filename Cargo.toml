@@ -14,7 +14,7 @@ categories = ["game-development"]
 bevy = { version = ">=0.20", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking", "ui_picking"], default-features = false }
 regex-lite = { version = "0.1" }
 bevy_auto_timer = ">=0.5"
-arboard = { version = "3.6", default-features = false, features = ["wayland-data-control"], optional = true }
+arboard = { version = "3.7", default-features = false, features = ["wayland-data-control"], optional = true }
 
 [dev-dependencies]
 bevy = { version = ">=0.20", features = ["dynamic_linking"] }

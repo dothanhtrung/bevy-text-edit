@@ -37,7 +37,6 @@ use bevy::prelude::{
     Handle,
     Image,
     ImageNode,
-    Interaction,
     IntoScheduleConfigs,
     JustifyItems,
     KeyCode,
@@ -182,7 +181,7 @@ impl VirtualKeyboardTheme {
 pub struct VirtualKeyboardChanged;
 
 #[derive(Component, Default)]
-#[require(Node, Interaction)]
+#[require(Node)]
 pub struct VirtualKeyboard {
     show_alt: bool,
 }
@@ -305,7 +304,6 @@ impl Default for VirtualKeysList {
 }
 
 #[derive(Component)]
-#[require(Interaction)]
 pub struct VirtualKey {
     pub key_code: KeyCode,
     pub logical_key: (Key, Key),

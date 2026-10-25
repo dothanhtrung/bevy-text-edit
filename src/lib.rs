@@ -90,8 +90,6 @@ pub mod experimental;
 pub mod virtual_keyboard;
 
 use crate::virtual_keyboard::{
-    VirtualKey,
-    VirtualKeyboard,
     VirtualKeyboardPlugin,
     VirtualKeyboardPos,
 };
@@ -102,6 +100,7 @@ use bevy::app::{
     Plugin,
     Update,
 };
+use bevy::ecs::observer::On;
 use bevy::input::keyboard::{
     Key,
     KeyboardInput,
@@ -109,11 +108,11 @@ use bevy::input::keyboard::{
 use bevy::input::ButtonState;
 #[cfg(feature = "log")]
 use bevy::log::error;
+use bevy::picking::events::PointerPress;
 use bevy::prelude::{
     in_state,
     Alpha,
     ButtonInput,
-    Changed,
     Commands,
     Component,
     Deref,
@@ -127,7 +126,6 @@ use bevy::prelude::{
     Message,
     MessageReader,
     MessageWriter,
-    MouseButton,
     Query,
     Res,
     ResMut,
@@ -137,18 +135,15 @@ use bevy::prelude::{
     Time,
     Timer,
     TimerMode,
-    Touches,
     With,
     Without,
 };
 use bevy::text::TextColor;
-use bevy::ui::Interaction;
 use regex_lite::Regex;
 
 macro_rules! plugin_systems {
     ( ) => {
         (
-            listen_changing_focus,
             focus_text_box,
             listen_keyboard_input,
             blink_cursor,
@@ -184,10 +179,10 @@ where
         app.insert_resource(ClipboardMng::new());
 
         if self.states.is_empty() {
-            app.add_systems(Update, plugin_systems!());
+            app.add_systems(Update, plugin_systems!()).add_observer(listen_changing_focus);
         } else {
             for state in &self.states {
-                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
+                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone()))).add_observer(listen_changing_focus);
             }
         }
     }
@@ -238,6 +233,7 @@ pub struct BlinkInterval(Timer);
 /// Event when text is focused
 #[derive(Message)]
 pub enum TextFocusChanged {
+    /// Show at y
     Show(f32),
     Hide,
 }
@@ -264,7 +260,7 @@ pub struct TextEditFocus;
 /// }
 /// ```
 #[derive(Component)]
-#[require(Interaction, Text, GlobalTransform)]
+#[require(Text, GlobalTransform)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
     pub filter_out: Vec<String>,
@@ -401,52 +397,19 @@ fn focus_text_box(
     }
 }
 
+// TODO: Handler Enter and Escape
+// TODO: Handler click outside to unfocus
+
 pub fn listen_changing_focus(
+    trigger: On<PointerPress>,
     mut commands: Commands,
-    input: Res<ButtonInput<MouseButton>>,
-    mut text_interactions: Query<(&Interaction, Entity, &GlobalTransform), (Changed<Interaction>, With<TextEditable>)>,
-    virtual_key_interaction: Query<&Interaction, (Changed<Interaction>, With<VirtualKey>, Without<TextEditable>)>,
-    virtual_keyboard_interaction: Query<
-        &Interaction,
-        (
-            Changed<Interaction>,
-            With<VirtualKeyboard>,
-            Without<VirtualKey>,
-            Without<TextEditable>,
-        ),
-    >,
+    mut text_interactions: Query<(Entity, &GlobalTransform), With<TextEditable>>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     mut text_edited_event: MessageWriter<TextEdited>,
     mut focus_event: MessageWriter<TextFocusChanged>,
-    mut events: MessageReader<KeyboardInput>,
-    touches: Res<Touches>,
 ) {
-    let mut unfocus_key_pressed = false;
-    for event in events.read() {
-        // Only trigger changes at the first time the key is pressed.
-        if event.state == ButtonState::Released {
-            continue;
-        }
-        match &event.logical_key {
-            Key::Enter => unfocus_key_pressed = true,
-            Key::Escape => unfocus_key_pressed = true,
-            _ => {}
-        }
-    }
-    let clicked_elsewhere = input.just_pressed(MouseButton::Left) || touches.any_just_pressed();
-    if unfocus_key_pressed
-        || (text_interactions.is_empty()
-            && virtual_key_interaction.is_empty()
-            && virtual_keyboard_interaction.is_empty()
-            && clicked_elsewhere)
-    {
-        unfocus_text_box(&mut commands, &mut focusing_texts, None, &mut text_edited_event);
-        focus_event.write(TextFocusChanged::Hide);
-        return;
-    }
-
-    for (interaction, e, global_transform) in text_interactions.iter_mut() {
-        if *interaction == Interaction::Pressed {
+    for ( e, global_transform) in text_interactions.iter_mut() {
+        if e == trigger.entity {
             focus_event.write(TextFocusChanged::Show(global_transform.translation().y));
 
             let mut focusing_list = Vec::new();
