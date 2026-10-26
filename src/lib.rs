@@ -229,7 +229,7 @@ pub struct BlinkInterval(Timer);
 /// Event when text is focused
 #[derive(Message)]
 pub enum TextFocusChanged {
-    /// Show at y
+    /// Show on top or bottom depend on the global_y of focused text entity
     Show(f32),
     Hide,
 }
@@ -344,31 +344,32 @@ impl ClipboardMng {
     }
 }
 
-fn unfocus_text_box(
+fn submit_and_unfocus(
     commands: &mut Commands,
-    text_focus: &mut Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
+    focus_entity: Entity,
+    cursor: &CursorPosition,
+    text: &mut Text,
+    text_editable: &TextEditable,
     ignore_entity: Option<Entity>,
     text_edited_event: &mut MessageWriter<TextEdited>,
 ) {
-    for (e, cursor, mut text, text_editable) in text_focus.iter_mut() {
-        if ignore_entity.is_none() || e != ignore_entity.unwrap() {
-            commands.entity(e).remove::<TextEditFocus>();
+    if ignore_entity.is_none() || focus_entity != ignore_entity.unwrap() {
+        commands.entity(focus_entity).remove::<TextEditFocus>();
 
-            if text.len() > cursor.pos {
-                text.remove(cursor.pos);
-            }
-            commands.entity(e).remove::<CursorPosition>();
-            commands.entity(e).remove::<TextEditFocus>();
-
-            let edited_text = if text_editable.is_placeholder_shown { String::new() } else { text.0.clone() };
-
-            let text_edited = TextEdited {
-                text: edited_text,
-                entity: e,
-            };
-            text_edited_event.write(text_edited.clone());
-            commands.trigger(text_edited);
+        if text.len() > cursor.pos {
+            text.remove(cursor.pos);
         }
+        commands.entity(focus_entity).remove::<CursorPosition>();
+        commands.entity(focus_entity).remove::<TextEditFocus>();
+
+        let edited_text = if text_editable.is_placeholder_shown { String::new() } else { text.0.clone() };
+
+        let text_edited = TextEdited {
+            text: edited_text,
+            entity: focus_entity,
+        };
+        text_edited_event.write(text_edited.clone());
+        commands.trigger(text_edited);
     }
 }
 
@@ -393,7 +394,6 @@ fn focus_text_box(
     }
 }
 
-// TODO: Handler Enter and Escape
 // TODO: Handler click outside to unfocus
 
 pub fn listen_changing_focus(
@@ -414,7 +414,17 @@ pub fn listen_changing_focus(
             }
 
             // Unfocus all text box except which is currently clicked on
-            unfocus_text_box(&mut commands, &mut focusing_texts, Some(e), &mut text_edited_event);
+            for (focus_entity, cursor, mut text, text_editable) in focusing_texts.iter_mut() {
+                submit_and_unfocus(
+                    &mut commands,
+                    focus_entity,
+                    cursor,
+                    &mut text,
+                    text_editable,
+                    Some(e),
+                    &mut text_edited_event,
+                );
+            }
 
             if !focusing_list.contains(&e) {
                 commands.entity(e).insert(TextEditFocus);
@@ -424,15 +434,18 @@ pub fn listen_changing_focus(
 }
 
 fn listen_keyboard_input(
+    mut commands: Commands,
     mut events: MessageReader<KeyboardInput>,
     mut ime_reader: MessageReader<Ime>,
-    mut edit_text: Query<(&mut Text, &mut CursorPosition, &TextEditable), With<TextEditFocus>>,
+    mut edit_text: Query<(Entity, &mut CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     display_cursor: Res<DisplayTextCursor>,
     #[cfg(feature = "clipboard")] mut clipboard_mng: ResMut<ClipboardMng>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut text_edited_event: MessageWriter<TextEdited>,
+    mut focus_event: MessageWriter<TextFocusChanged>,
 ) {
     let is_ctrl_pressed = keyboard_input.pressed(KeyCode::ControlRight) || keyboard_input.pressed(KeyCode::ControlLeft);
-    for (mut text, mut cursor, texteditable) in edit_text.iter_mut() {
+    for (focus_entity, mut cursor, mut text, texteditable) in edit_text.iter_mut() {
         let ignore_list = &texteditable.filter_out;
         let allow_list = &texteditable.filter_in;
         for ime in ime_reader.read() {
@@ -463,6 +476,18 @@ fn listen_keyboard_input(
             }
 
             match &event.logical_key {
+                Key::Enter | Key::Escape => {
+                    submit_and_unfocus(
+                        &mut commands,
+                        focus_entity,
+                        &cursor,
+                        &mut text,
+                        texteditable,
+                        None,
+                        &mut text_edited_event,
+                    );
+                    focus_event.write(TextFocusChanged::Hide);
+                }
                 Key::Space => {
                     if is_ignored(ignore_list, allow_list, " ".into())
                         || (texteditable.max_length > 0 && text.len() > texteditable.max_length)
