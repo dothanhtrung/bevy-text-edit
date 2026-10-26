@@ -1,6 +1,5 @@
 //! This is experimental, you don't need to care about this
 
-#[cfg(feature = "experimental")]
 use bevy::color::palettes::tailwind::{
     NEUTRAL_600,
     ZINC_800,
@@ -32,11 +31,9 @@ fn main() {
     app.run();
 }
 
-#[cfg(feature = "experimental")]
 #[derive(Component)]
 struct Result;
 
-#[cfg(feature = "experimental")]
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
@@ -65,7 +62,6 @@ fn setup(mut commands: Commands) {
     commands.entity(id.unwrap()).observe(get_result);
 }
 
-#[cfg(feature = "experimental")]
 fn get_result(trigger: On<NumberInputChanged>, mut query: Query<&mut Text, With<Result>>) {
     for mut text in query.iter_mut() {
         **text = format!("Result: {}", trigger.number);

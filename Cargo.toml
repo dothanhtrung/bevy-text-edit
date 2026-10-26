@@ -23,4 +23,8 @@ bevy = { version = ">=0.20", features = ["dynamic_linking"] }
 default = ["clipboard"]
 clipboard = ["arboard"]
 log = ["bevy/bevy_log"]
-experimental = []
+experimental = ["bevy/bevy_ui_widgets"]
+
+[[example]]
+name = "number_input"
+required-features = ["experimental"]
