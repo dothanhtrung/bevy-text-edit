@@ -1,95 +1,12 @@
-//! ### Plugin
-//!
-//! Add plugin `TextEditPlugin` to the app and define which states it will run in:
-//!
-//! ```rust
-//! use bevy::prelude::*;
-//! use bevy_text_edit::TextEditPlugin;
-//!
-//! #[derive(Clone, Debug, Default, Eq, PartialEq, Hash, States)]
-//! enum GameState {
-//!     #[default]
-//!     Menu,
-//! }
-//!
-//! fn main() {
-//!     App::new()
-//!         .add_plugins(DefaultPlugins)
-//!         // Add the plugin
-//!         .add_plugins(TextEditPlugin::new(vec![GameState::Menu]))
-//!         .run();
-//! }
-//! ```
-//!
-//! If you don't care to game state and want to always run input text, use `TextEditPluginAnyState`:
-//! ```rust
-//! use bevy::prelude::*;
-//! use bevy_text_edit::TextEditPluginAnyState;
-//!
-//! App::new()
-//!     .add_plugins(DefaultPlugins)
-//!     // Add the plugin
-//!     .add_plugins(TextEditPluginAnyState::any())
-//!     .run();
-//! ```
-//!
-//! ### Component
-//!
-//! Insert the component `TextEditable` into any text entity that needs to be editable:
-//!
-//! ```rust
-//! use bevy::prelude::*;
-//! use bevy_text_edit::TextEditable;
-//!
-//! fn setup(mut commands: Commands) {
-//!     commands.spawn((
-//!         TextEditable::default(), // Mark text is editable
-//!         Text::new("Input Text 1"),
-//!     ));
-//! }
-//! ```
-//!
-//! Only text that is focused by clicking gets keyboard input.
-//!
-//!
-//! It is also possible to limit which characters are allowed to enter through `filter_in` and `filter_out` attribute (regex is supported):
-//! ```rust
-//! use bevy::prelude::*;
-//! use bevy_text_edit::TextEditable;
-//!
-//! fn setup(mut commands: Commands) {
-//!     commands.spawn((
-//!         TextEditable {
-//!             filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-//!             filter_out: vec!["5".into()],                // Ignore number 5
-//!             ..default()
-//!         },
-//!         Text::new("Input Text 1"),
-//!     ));
-//! }
-//! ```
-//!
-//! ### Get text
-//!
-//! The edited text can be retrieved from event `TextEdited`.
-//! ```rust
-//! use bevy::prelude::*;
-//! use bevy_text_edit::TextEdited;
-//!
-//! fn get_text(
-//!     mut event: MessageReader<TextEdited>,
-//! ) {
-//!     for e in event.read() {
-//!         info!("Entity {}: {}", e.entity, e.text);
-//!     }
-//! }
-//! ```
+#![doc=include_str!("../README.md")]
 
 #[cfg(feature = "experimental")]
 pub mod experimental;
 pub mod virtual_keyboard;
 
 use crate::virtual_keyboard::{
+    VirtualKey,
+    VirtualKeyboard,
     VirtualKeyboardPlugin,
     VirtualKeyboardPos,
 };
@@ -106,6 +23,8 @@ use bevy::input::keyboard::{
     Key,
     KeyboardInput,
 };
+use bevy::input::mouse::MouseButton;
+use bevy::input::touch::Touches;
 #[cfg(feature = "log")]
 use bevy::log::error;
 use bevy::picking::events::PointerPress;
@@ -139,11 +58,20 @@ use bevy::prelude::{
     in_state,
 };
 use bevy::text::TextColor;
+use bevy::ui::Pressed;
+use bevy::ui_widgets::Button;
 use regex_lite::Regex;
 
 macro_rules! plugin_systems {
     ( ) => {
-        (focus_text_box, listen_keyboard_input, blink_cursor, display_placeholder).chain()
+        (
+            click_outside_to_unfocus,
+            focus_text_box,
+            listen_keyboard_input,
+            blink_cursor,
+            display_placeholder,
+        )
+            .chain()
     };
 }
 
@@ -172,13 +100,13 @@ where
         #[cfg(feature = "clipboard")]
         app.insert_resource(ClipboardMng::new());
 
+        app.add_observer(listen_changing_focus);
+
         if self.states.is_empty() {
-            app.add_systems(Update, plugin_systems!())
-                .add_observer(listen_changing_focus);
+            app.add_systems(Update, plugin_systems!());
         } else {
             for state in &self.states {
-                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())))
-                    .add_observer(listen_changing_focus);
+                app.add_systems(Update, plugin_systems!().run_if(in_state(state.clone())));
             }
         }
     }
@@ -256,7 +184,7 @@ pub struct TextEditFocus;
 /// }
 /// ```
 #[derive(Component)]
-#[require(Text, GlobalTransform)]
+#[require(Text, GlobalTransform, Button)]
 pub struct TextEditable {
     /// Character in this list won't be added to the text.
     pub filter_out: Vec<String>,
@@ -394,42 +322,76 @@ fn focus_text_box(
     }
 }
 
-// TODO: Handler click outside to unfocus
-
-pub fn listen_changing_focus(
-    trigger: On<PointerPress>,
+pub fn click_outside_to_unfocus(
     mut commands: Commands,
-    mut text_interactions: Query<(Entity, &GlobalTransform), With<TextEditable>>,
+    text_editable_interact: Query<Entity, (With<TextEditable>, With<Pressed>)>,
+    virtual_key_interact: Query<Entity, (With<VirtualKey>, With<Pressed>, Without<TextEditable>)>,
+    virtual_keyboard_interact: Query<
+        Entity,
+        (
+            With<VirtualKeyboard>,
+            With<Pressed>,
+            Without<VirtualKey>,
+            Without<TextEditable>,
+        ),
+    >,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+    touches: Res<Touches>,
     mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
     mut text_edited_event: MessageWriter<TextEdited>,
     mut focus_event: MessageWriter<TextFocusChanged>,
 ) {
-    for (e, global_transform) in text_interactions.iter_mut() {
-        if e == trigger.entity {
-            focus_event.write(TextFocusChanged::Show(global_transform.translation().y));
-
-            let mut focusing_list = Vec::new();
-            for (focusing_e, _, _, _) in focusing_texts.iter() {
-                focusing_list.push(focusing_e);
-            }
-
-            // Unfocus all text box except which is currently clicked on
-            for (focus_entity, cursor, mut text, text_editable) in focusing_texts.iter_mut() {
-                submit_and_unfocus(
-                    &mut commands,
-                    focus_entity,
-                    cursor,
-                    &mut text,
-                    text_editable,
-                    Some(e),
-                    &mut text_edited_event,
-                );
-            }
-
-            if !focusing_list.contains(&e) {
-                commands.entity(e).insert(TextEditFocus);
-            }
+    if (mouse_input.just_pressed(MouseButton::Left) || touches.any_just_pressed())
+        && text_editable_interact.is_empty()
+        && virtual_key_interact.is_empty()
+        && virtual_keyboard_interact.is_empty()
+    {
+        for (focus_entity, cursor, mut text, text_editable) in focusing_texts.iter_mut() {
+            submit_and_unfocus(
+                &mut commands,
+                focus_entity,
+                cursor,
+                &mut text,
+                text_editable,
+                None,
+                &mut text_edited_event,
+            );
         }
+        focus_event.write(TextFocusChanged::Hide);
+    }
+}
+
+pub fn listen_changing_focus(
+    trigger: On<PointerPress>,
+    mut commands: Commands,
+    text_interactions: Query<&GlobalTransform, With<TextEditable>>,
+    mut focusing_texts: Query<(Entity, &CursorPosition, &mut Text, &TextEditable), With<TextEditFocus>>,
+    mut text_edited_event: MessageWriter<TextEdited>,
+    mut focus_event: MessageWriter<TextFocusChanged>,
+) {
+    if let Ok(global_transform) = text_interactions.get(trigger.entity) {
+        let mut focusing_list = Vec::new();
+        for (focusing_e, _, _, _) in focusing_texts.iter() {
+            focusing_list.push(focusing_e);
+        }
+
+        // Unfocus all text box except which is currently clicked on
+        for (focus_entity, cursor, mut text, text_editable) in focusing_texts.iter_mut() {
+            submit_and_unfocus(
+                &mut commands,
+                focus_entity,
+                cursor,
+                &mut text,
+                text_editable,
+                Some(trigger.entity),
+                &mut text_edited_event,
+            );
+        }
+
+        if !focusing_list.contains(&trigger.entity) {
+            commands.entity(trigger.entity).insert(TextEditFocus);
+        }
+        focus_event.write(TextFocusChanged::Show(global_transform.translation().y));
     }
 }
 

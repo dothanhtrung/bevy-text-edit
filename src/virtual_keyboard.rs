@@ -76,6 +76,7 @@ use bevy::ui::{
     UiRect,
     Val,
 };
+use bevy::ui_widgets::Button;
 use bevy::utils::default;
 use bevy::window::PrimaryWindow;
 use bevy_auto_timer::{
@@ -164,8 +165,8 @@ pub struct VirtualKeyboardTheme {
 impl VirtualKeyboardTheme {
     fn new() -> Self {
         Self {
-            bg_color: Color::NONE,
-            button_color: Color::NONE,
+            bg_color: Color::BLACK,
+            button_color: Color::BLACK,
             text_color: Color::WHITE,
             key_size_1u: Val::Percent(KEY_1U),
             key_margin: Val::Percent(KEY_MARGIN),
@@ -181,7 +182,7 @@ impl VirtualKeyboardTheme {
 pub struct VirtualKeyboardChanged;
 
 #[derive(Component, Default)]
-#[require(Node)]
+#[require(Node, Button)]
 pub struct VirtualKeyboard {
     show_alt: bool,
 }
@@ -304,6 +305,7 @@ impl Default for VirtualKeysList {
 }
 
 #[derive(Component)]
+#[require(Button)]
 pub struct VirtualKey {
     pub key_code: KeyCode,
     pub logical_key: (Key, Key),

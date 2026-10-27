@@ -1,6 +1,6 @@
 [package]
 name = "bevy_text_edit"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Trung Do <dothanhtrung@pm.me>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,17 @@ exclude = ["assets", "examples", "tests", ".cargo", ".zed"]
 categories = ["game-development"]
 
 [dependencies]
-bevy = { version = ">=0.20", features = ["bevy_text", "bevy_ui", "bevy_color", "bevy_gilrs", "bevy_window", "bevy_state", "bevy_picking", "ui_picking"], default-features = false }
+bevy = { version = ">=0.20", features = [
+    "bevy_text",
+    "bevy_ui",
+    "bevy_color",
+    "bevy_gilrs",
+    "bevy_window",
+    "bevy_state",
+    "bevy_picking",
+    "ui_picking",
+    "bevy_ui_widgets"
+], default-features = false }
 regex-lite = { version = "0.1" }
 bevy_auto_timer = ">=0.5"
 arboard = { version = "3.7", default-features = false, features = ["wayland-data-control"], optional = true }
@@ -23,7 +33,7 @@ bevy = { version = ">=0.20", features = ["dynamic_linking"] }
 default = ["clipboard"]
 clipboard = ["arboard"]
 log = ["bevy/bevy_log"]
-experimental = ["bevy/bevy_ui_widgets"]
+experimental = []
 
 [[example]]
 name = "number_input"

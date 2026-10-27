@@ -184,7 +184,7 @@ fn setup(ignore: Vec<String>, allow: Vec<String>, max_length: usize) -> (App, En
                 .id();
 
             text2 = parent
-                .spawn((TextEditable::default(), Interaction::None, Text::new(TEXT_2)))
+                .spawn((TextEditable::default(), Text::new(TEXT_2)))
                 .id();
         });
 
